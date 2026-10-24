@@ -1,0 +1,179 @@
+/* ============ 首页文章卡片（横向 · 左右交错 · 简洁） ============ */
+
+/* 卡片悬浮效果 */
+#recent-posts .recent-post-item {
+  transition: all .3s ease;
+}
+#recent-posts .recent-post-item:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,.35) !important;
+  transform: translateY(-2px);
+}
+
+/* 封面图轻微放大 */
+#recent-posts .post_cover .post-bg {
+  transition: transform .5s ease;
+}
+#recent-posts .recent-post-item:hover .post-bg {
+  transform: scale(1.05);
+}
+
+/* 简洁：只保留标题和标签，隐藏日期、分类、摘要 */
+#recent-posts .post-meta-date,
+#recent-posts .article-meta:not(.tags),
+#recent-posts .recent-post-info .content {
+  display: none !important;
+}
+
+/* 标签：蓝色胶囊 */
+#recent-posts .article-meta.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#recent-posts .article-meta.tags .article-meta-separator,
+#recent-posts .article-meta.tags .article-meta-link,
+#recent-posts .article-meta.tags i {
+  display: none !important;
+}
+#recent-posts .article-meta__tags {
+  background: rgba(88,166,255,.14) !important;
+  color: #58a6ff !important;
+  padding: 3px 12px !important;
+  border-radius: 999px !important;
+  font-size: .76rem !important;
+}
+#recent-posts .article-meta__tags:hover {
+  background: #58a6ff !important;
+  color: #fff !important;
+}
+
+/* ============ 留言板（嵌在文章下方） ============ */
+.guestbook {
+  margin-top: 36px;
+}
+.guestbook-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+/* ============ 三栏布局 + 右侧导航（三角形） ============ */
+.home-page #recent-posts {
+  width: 50% !important;
+}
+
+.right-nav {
+  order: 3;
+  width: 20%;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: 10px;
+}
+.nav-card {
+  position: relative;
+  flex: none;
+  aspect-ratio: 1 / 1.1547; /* 等边三角形（尖角朝左右） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 32%;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: linear-gradient(160deg, rgba(88, 166, 255, .30), rgba(88, 166, 255, .06));
+  color: #58a6ff;
+  font-size: .85rem;
+  font-weight: 600;
+  transition: background .25s ease, color .25s ease;
+}
+/* 相邻三角形向下交叠，尖角咬进下一个三角形的底线，仅留细缝 */
+.nav-card + .nav-card {
+  margin-top: -52%;
+}
+.nav-card:nth-child(even) {
+  padding-right: 0;
+  padding-left: 32%;
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+.nav-card:hover {
+  background: linear-gradient(160deg, rgba(88, 166, 255, .55), rgba(88, 166, 255, .16));
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .right-nav {
+    display: none;
+  }
+}
+
+/* ============ 数字艺术：图廊 ============ */
+.gallery-page #recent-posts .recent-post-items {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.gallery-page #recent-posts .recent-post-item {
+  position: relative !important;
+  display: block !important;
+  height: auto !important;
+  aspect-ratio: 4 / 3;
+  margin: 0 !important;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .03);
+}
+.gallery-page #recent-posts .post_cover {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+.gallery-page #recent-posts .post-bg {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  transition: transform .45s ease;
+}
+.gallery-page #recent-posts .recent-post-item:hover .post-bg {
+  transform: scale(1.07);
+}
+/* 底部渐变 + 标题 */
+.gallery-page #recent-posts .post_cover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0, 0, 0, .82), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+.gallery-page #recent-posts .recent-post-info {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 16px !important;
+  width: 100% !important;
+}
+.gallery-page #recent-posts .article-title {
+  color: #fff !important;
+  font-size: 1rem !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .6);
+}
+.gallery-page #recent-posts .article-meta-wrap {
+  margin-top: 6px !important;
+  justify-content: flex-start !important;
+}
+
+@media (max-width: 900px) {
+  .gallery-page #recent-posts .recent-post-items {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ 首页中栏：去掉翻页 ============ */
+.home-page #recent-posts #pagination {
+  display: none !important;
+}

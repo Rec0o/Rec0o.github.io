@@ -1,0 +1,89 @@
+/* ============ 首次访问加载动画（ASCII 闪烁） ============ */
+
+/* head 内联脚本会在 <body> 出现前立刻加上 .rec0-loading，
+   用伪元素铺一层底色，避免页面内容一闪而过 */
+html.rec0-loading::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: #050d1a;
+  z-index: 99998;
+}
+html.rec0-loading,
+html.rec0-loading body {
+  overflow: hidden !important;
+}
+
+#rec0-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 起始：近黑的深蓝 */
+  background: #040b16;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity .9s ease;
+}
+
+/* 中心渐亮的光晕（由 JS 随字符出现同步驱动） */
+#rec0-loader .rec0-glow {
+  position: absolute;
+  inset: -10%;
+  /* 椭圆形、低亮度，峰值不高于字符亮度 */
+  background: radial-gradient(
+    ellipse 42% 30% at 50% 50%,
+    rgba(150, 200, 245, .18) 0%,
+    rgba(90, 150, 220, .09) 42%,
+    rgba(40, 80, 140, .03) 64%,
+    rgba(0, 0, 0, 0) 82%
+  );
+  opacity: 0;
+  transform: scale(.92);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+#rec0-loader.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ASCII 字符网格 */
+#rec0-loader .rec0-ascii {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-family: 'Courier New', Consolas, Monaco, monospace;
+  font-size: 16px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: pre;
+  user-select: none;
+}
+#rec0-loader .rec0-ascii .c {
+  opacity: 0;
+  color: #5f9fd8;
+  transition: opacity .12s ease, color .25s ease, text-shadow .25s ease;
+}
+#rec0-loader .rec0-ascii .c.show {
+  opacity: 1;
+}
+#rec0-loader .rec0-ascii .c.on {
+  color: #a8d4ff;
+  text-shadow: 0 0 6px rgba(88, 166, 255, .8), 0 0 20px rgba(88, 166, 255, .3);
+}
+
+/* 小屏缩小，保证整幅 ASCII 可见 */
+@media (max-width: 900px) {
+  #rec0-loader .rec0-ascii {
+    font-size: 11px;
+  }
+}
+@media (max-width: 600px) {
+  #rec0-loader .rec0-ascii {
+    font-size: 7px;
+  }
+}

@@ -1,0 +1,167 @@
+/* ============ 悬浮音乐播放器 ============ */
+
+/* 默认关闭 */
+#rec0-player-holder.closed {
+  display: none !important;
+}
+
+/* 设置面板里的开关按钮：开启时高亮 */
+#rightside-config-hide #rec0-player-toggle.active {
+  background-color: var(--btn-hover-color) !important;
+  color: #fff !important;
+}
+
+/* 包裹层：负责定位与拖动（transform 会成为内部 fixed 元素的定位参照） */
+#rec0-player-holder {
+  position: fixed;
+  right: 24px;
+  bottom: 100px; /* 避开右下角“设置/返回顶部”按钮 */
+  width: 400px;
+  height: 0;
+  z-index: 9997;
+  will-change: transform;
+}
+#rec0-player-holder meting-js {
+  display: block;
+}
+
+/* 主体卡片：暗色 + 圆角 + 阴影
+   注意：不能加 overflow:hidden，否则会裁掉进度条/音量/按钮 */
+#rec0-player-holder .aplayer-body {
+  background: rgba(22, 27, 34, .97) !important;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .55) !important;
+  cursor: move;
+}
+#rec0-player-holder .aplayer-body .aplayer-pic {
+  border-radius: 12px 0 0 12px !important;
+}
+
+/* 关闭展开/收起：隐藏右侧展开条，固定展开 */
+#rec0-player-holder .aplayer-miniswitcher {
+  display: none !important;
+}
+#rec0-player-holder .aplayer-narrow {
+  width: auto !important;
+}
+#rec0-player-holder .aplayer-narrow .aplayer-body {
+  width: 100% !important;
+}
+#rec0-player-holder .aplayer-narrow .aplayer-info {
+  display: block !important;
+  transform: scaleX(1) !important;
+}
+#rec0-player-holder .aplayer-info {
+  display: block !important;
+  transform: scaleX(1) !important;
+}
+/* 展开条隐藏后去掉右侧留白 */
+#rec0-player-holder .aplayer-body {
+  padding-right: 0 !important;
+}
+
+/* 歌词：保持在播放器上方，左右留白 */
+#rec0-player-holder .aplayer-lrc {
+  bottom: 96px !important;
+  padding: 0 18px;
+  text-shadow: none !important;
+  pointer-events: none;
+}
+#rec0-player-holder .aplayer-lrc p {
+  color: #8b949e !important;
+  font-size: 13px !important;
+  text-align: center;
+}
+#rec0-player-holder .aplayer-lrc p.aplayer-lrc-current {
+  color: #58a6ff !important;
+  font-size: 14px !important;
+}
+#rec0-player-holder .aplayer-lrc:after,
+#rec0-player-holder .aplayer-lrc:before {
+  display: none !important;
+}
+#rec0-player-holder .aplayer-body .aplayer-pic,
+#rec0-player-holder .aplayer-body .aplayer-info,
+#rec0-player-holder .aplayer-body .aplayer-controls {
+  cursor: move;
+}
+#rec0-player-holder .aplayer-button,
+#rec0-player-holder .aplayer-bar-wrap,
+#rec0-player-holder .aplayer-volume-wrap,
+#rec0-player-holder .aplayer-list-toggle {
+  cursor: pointer !important;
+}
+
+/* 图标：默认是黑色 SVG，暗色下必须改浅色 */
+#rec0-player-holder .aplayer-icon path {
+  fill: #c9d1d9 !important;
+}
+#rec0-player-holder .aplayer-icon:hover path {
+  fill: #58a6ff !important;
+}
+#rec0-player-holder .aplayer-volume-wrap .aplayer-icon path {
+  fill: #c9d1d9 !important;
+}
+
+/* 进度条底槽 / 已加载部分 */
+#rec0-player-holder .aplayer-bar-wrap .aplayer-bar {
+  background: rgba(255, 255, 255, .18) !important;
+}
+#rec0-player-holder .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+  background: rgba(255, 255, 255, .32) !important;
+}
+#rec0-player-holder .aplayer-bar-wrap .aplayer-bar .aplayer-played {
+  background: #58a6ff !important;
+}
+
+/* 时间文字 */
+#rec0-player-holder .aplayer-time {
+  color: #8b949e !important;
+}
+
+/* 歌名 / 歌手 */
+#rec0-player-holder .aplayer-info .aplayer-music .aplayer-title {
+  color: #e6edf3 !important;
+}
+#rec0-player-holder .aplayer-info .aplayer-music .aplayer-author {
+  color: #8b949e !important;
+}
+
+/* 播放列表 */
+#rec0-player-holder .aplayer-list {
+  background: rgba(22, 27, 34, .97) !important;
+  border: 1px solid rgba(255, 255, 255, .08) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+#rec0-player-holder .aplayer-list ol li {
+  border-top: 1px solid rgba(255, 255, 255, .05) !important;
+  color: #c9d1d9 !important;
+}
+#rec0-player-holder .aplayer-list ol li:hover {
+  background: rgba(88, 166, 255, .12) !important;
+}
+#rec0-player-holder .aplayer-list ol li.aplayer-list-light {
+  background: rgba(88, 166, 255, .18) !important;
+}
+#rec0-player-holder .aplayer-list ol li .aplayer-list-author {
+  color: #8b949e !important;
+}
+
+/* 进度条底槽 */
+#rec0-player-holder .aplayer-bar-wrap .aplayer-bar {
+  background: rgba(255, 255, 255, .12) !important;
+}
+#rec0-player-holder .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+  background: rgba(255, 255, 255, .2) !important;
+}
+
+/* 移动端 */
+@media (max-width: 768px) {
+  #rec0-player-holder {
+    width: 260px;
+    right: 8px;
+    bottom: 8px;
+  }
+}
