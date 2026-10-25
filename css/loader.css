@@ -76,14 +76,19 @@ html.rec0-loading body {
   text-shadow: 0 0 6px rgba(88, 166, 255, .8), 0 0 20px rgba(88, 166, 255, .3);
 }
 
-/* 小屏缩小，保证整幅 ASCII 可见 */
+/* 小屏缩小，保证整幅 ASCII 完整可见（42 字符宽） */
 @media (max-width: 900px) {
   #rec0-loader .rec0-ascii {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   #rec0-loader .rec0-ascii {
-    font-size: 7px;
+    font-size: 9px;
+  }
+}
+@media (max-width: 420px) {
+  #rec0-loader .rec0-ascii {
+    font-size: 7.5px;
   }
 }

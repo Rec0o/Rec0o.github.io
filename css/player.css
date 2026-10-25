@@ -162,6 +162,12 @@
   #rec0-player-holder {
     width: 260px;
     right: 8px;
-    bottom: 8px;
+    bottom: 120px; /* 避开右下角按钮 */
+  }
+}
+@media (max-width: 420px) {
+  #rec0-player-holder {
+    width: calc(100vw - 24px);
+    max-width: 300px;
   }
 }

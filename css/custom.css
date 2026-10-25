@@ -100,9 +100,61 @@
   color: #fff;
 }
 
+/* ============ 移动端布局（≤900px 单列） ============ */
 @media (max-width: 900px) {
+  /* 中栏恢复整行 */
+  .home-page #recent-posts {
+    width: 100% !important;
+    order: 3;
+  }
+
+  /* 个人资料栏排在最前 */
+  .home-page #aside-content {
+    order: 1;
+    width: 100% !important;
+    margin: 0 0 18px !important;
+    padding: 0 !important;
+  }
+
+  /* 分类入口：三角形改为横排 */
   .right-nav {
-    display: none;
+    order: 2;
+    width: 100%;
+    margin: 0 0 20px;
+    padding-top: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .nav-card {
+    flex: 1 1 0;
+    aspect-ratio: 1 / 1.15;
+    font-size: .72rem;
+    white-space: nowrap;
+    padding-right: 30%;
+    border-radius: 4px;
+  }
+  .nav-card + .nav-card {
+    margin-top: 0;
+  }
+  .nav-card:nth-child(even) {
+    padding-right: 0;
+    padding-left: 30%;
+  }
+}
+
+@media (max-width: 420px) {
+  .right-nav {
+    gap: 6px;
+  }
+  .nav-card {
+    font-size: .64rem;
+    padding-right: 24%;
+  }
+  .nav-card:nth-child(even) {
+    padding-right: 0;
+    padding-left: 24%;
   }
 }
 
@@ -176,4 +228,24 @@
 /* ============ 首页中栏：去掉翻页 ============ */
 .home-page #recent-posts #pagination {
   display: none !important;
+}
+
+/* ============ 触屏设备：禁用悬浮位移，避免「粘住」 ============ */
+@media (hover: none) {
+  #recent-posts .recent-post-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  #recent-posts .recent-post-item:hover .post-bg {
+    transform: none !important;
+  }
+  .gallery-page #recent-posts .recent-post-item:hover .post-bg {
+    transform: none !important;
+  }
+}
+
+/* ============ 防止小屏横向溢出 ============ */
+html,
+body {
+  overflow-x: hidden;
 }
