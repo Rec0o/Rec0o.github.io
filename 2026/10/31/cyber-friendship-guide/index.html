@@ -1,0 +1,526 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>赛博交友指南——提示词编写的部分见解 | Rec0 Space</title><meta name="author" content="Rec0"><meta name="copyright" content="Rec0"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1117"><meta name="description" content="第一次用 AI 的深夜，我对着输入框删了又改。写少了怕它猜错，写多了又像在给下属写需求文档。 后来发现，问题不在字多字少，在我把对话当成了搜索。搜索引擎不知道你是谁，也不需要知道；但 AI 给的是回应，而回应这件事天然要求一段关系。 这篇不提供模板。它只是我自己的写法，和那些流行框架对照之后的一点看法。 一、先想清楚你在跟谁说话大多数人第一次用 AI 时，把它当搜索引擎：敲几个关键词，等答案。 这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="赛博交友指南——提示词编写的部分见解">
+<meta property="og:url" content="https://rec0o.github.io/2026/10/31/cyber-friendship-guide/index.html">
+<meta property="og:site_name" content="Rec0 Space">
+<meta property="og:description" content="第一次用 AI 的深夜，我对着输入框删了又改。写少了怕它猜错，写多了又像在给下属写需求文档。 后来发现，问题不在字多字少，在我把对话当成了搜索。搜索引擎不知道你是谁，也不需要知道；但 AI 给的是回应，而回应这件事天然要求一段关系。 这篇不提供模板。它只是我自己的写法，和那些流行框架对照之后的一点看法。 一、先想清楚你在跟谁说话大多数人第一次用 AI 时，把它当搜索引擎：敲几个关键词，等答案。 这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picsum.photos/seed/rec0-prompt/1200/800">
+<meta property="article:published_time" content="2026-10-31T13:10:00.000Z">
+<meta property="article:modified_time" content="2026-10-31T12:37:04.485Z">
+<meta property="article:author" content="Rec0">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="工作流">
+<meta property="article:tag" content="提示词">
+<meta property="article:tag" content="方法论">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picsum.photos/seed/rec0-prompt/1200/800"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "赛博交友指南——提示词编写的部分见解",
+  "url": "https://rec0o.github.io/2026/10/31/cyber-friendship-guide/",
+  "image": "https://picsum.photos/seed/rec0-prompt/1200/800",
+  "datePublished": "2026-10-31T13:10:00.000Z",
+  "dateModified": "2026-10-31T12:37:04.485Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Rec0",
+      "url": "https://rec0o.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/226081822?v=4"><link rel="canonical" href="https://rec0o.github.io/2026/10/31/cyber-friendship-guide/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.7.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        const data = { value }
+
+        if (ttl != null) {
+          data.expiry = Date.now() + ttl * 86400000
+        }
+
+        localStorage.setItem(key, JSON.stringify(data))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return
+
+        try {
+          const data = JSON.parse(itemStr)
+
+          if (data.expiry && Date.now() > data.expiry) {
+            localStorage.removeItem(key)
+            return
+          }
+
+          return data.value
+        } catch {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+
+    const scriptCache = new Map()
+    const cssCache = new Map()
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => {
+        if (scriptCache.has(url)) {
+          return scriptCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+
+          script.src = url
+          script.async = true
+
+          for (const key in attr) {
+            script.setAttribute(key, attr[key])
+          }
+
+          script.onload = resolve
+          script.onerror = reject
+
+          document.head.appendChild(script)
+        })
+
+        scriptCache.set(url, promise)
+
+        return promise
+      },
+      getCSS: (url, id) => {
+        if (cssCache.has(url)) {
+          return cssCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+
+          link.rel = 'stylesheet'
+          link.href = url
+
+          if (id) {
+            link.id = id
+          }
+
+          link.onload = resolve
+          link.onerror = reject
+
+          document.head.appendChild(link)
+        })
+
+        cssCache.set(url, promise)
+
+        return promise
+      },
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      const activateDarkMode = () => {
+        document.documentElement.dataset.theme = 'dark'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#0d1117')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.dataset.theme = 'light'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '赛博交友指南——提示词编写的部分见解',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><link rel="stylesheet" href="/css/loader.css"><link rel="stylesheet" href="/vendor/APlayer.min.css"><link rel="stylesheet" href="/css/player.css"><script>(function(){try{if(localStorage.getItem('rec0_loader_seen'))return;}catch(e){}document.documentElement.classList.add('rec0-loading');})();</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://picsum.photos/seed/rec0-prompt/1200/800);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Rec0 Space</span></a><a class="nav-page-title" href="/"><span class="site-name">赛博交友指南——提示词编写的部分见解</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">赛博交友指南——提示词编写的部分见解</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-10-31T13:10:00.000Z" title="发表于 2026-10-31 21:10:00">2026-10-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-10-31T12:37:04.485Z" title="更新于 2026-10-31 20:37:04">2026-10-31</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF%E5%8D%9A%E5%AE%A2/">技术博客</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>第一次用 AI 的深夜，我对着输入框删了又改。写少了怕它猜错，写多了又像在给下属写需求文档。</p>
+<p>后来发现，问题不在字多字少，在<strong>我把对话当成了搜索</strong>。搜索引擎不知道你是谁，也不需要知道；但 AI 给的是回应，而回应这件事天然要求一段关系。</p>
+<p>这篇不提供模板。它只是我自己的写法，和那些流行框架对照之后的一点看法。</p>
+<h2 id="一、先想清楚你在跟谁说话"><a href="#一、先想清楚你在跟谁说话" class="headerlink" title="一、先想清楚你在跟谁说话"></a>一、先想清楚你在跟谁说话</h2><p>大多数人第一次用 AI 时，把它当搜索引擎：敲几个关键词，等答案。</p>
+<p>这个隐喻一开始就错了。你要的不是网页，是回应。而回应，要求对方先知道你处在什么局面里。</p>
+<p>我更愿意把 AI 当成<strong>一个刚入职的同事</strong>：</p>
+<ul>
+<li>他能力很强，几乎所有领域都懂一点；</li>
+<li>他记性很好，但只记得你告诉过他的；</li>
+<li>他不会主动问你「这个项目之前是怎么做的」，除非你让他问；</li>
+<li>他非常怕做错，所以你不说清楚，他要么过度谨慎，要么大胆猜错。</li>
+</ul>
+<p>按这个隐喻，提示词问题就变得具体了：你不是在「输入指令」，你是在<strong>交接工作</strong>。交接得好不好，取决于三件事——他知道多少背景、他知道边界在哪、他知道怎么算做完。</p>
+<blockquote>
+<p>把 AI 当人，不是因为它有人格，而是因为只有「人」才需要被交代背景、被划出边界、被承认会犯错。</p>
+</blockquote>
+<p>反过来，你不会对同事做的事，也别对 AI 做：堆关键词、说半句话、指望它猜。</p>
+<h2 id="二、流行的流程，其实都在补同一件事"><a href="#二、流行的流程，其实都在补同一件事" class="headerlink" title="二、流行的流程，其实都在补同一件事"></a>二、流行的流程，其实都在补同一件事</h2><p>把这些年流传最广的几套东西摆在一起，会发现它们的分歧远比想象中小。</p>
+<table>
+<thead>
+<tr>
+<th>框架</th>
+<th>核心要素</th>
+<th>解决什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OpenAI 提示词指南</td>
+<td>清晰指令、参考文本、拆解任务、思考时间、工具调用、系统化测试</td>
+<td>模糊 → 具体</td>
+</tr>
+<tr>
+<td>Anthropic 建议</td>
+<td>标签分隔结构、给示例、指定角色、先思考再回答</td>
+<td>混乱 → 有结构</td>
+</tr>
+<tr>
+<td>CO-STAR</td>
+<td>上下文、目标、风格、语气、受众、格式</td>
+<td>缺要素 → 齐备</td>
+</tr>
+<tr>
+<td>CRISPE</td>
+<td>能力与角色、背景洞察、陈述、个性、实验</td>
+<td>无角色 → 有角色</td>
+</tr>
+<tr>
+<td>LangGPT 结构化</td>
+<td>角色、简介、规则、工作流、输出格式</td>
+<td>自然语言 → 模板</td>
+</tr>
+<tr>
+<td>吴恩达课程</td>
+<td>明确任务、给步骤、给例子、迭代</td>
+<td>一次成稿 → 可迭代</td>
+</tr>
+</tbody></table>
+<p>看最后一列会发现，它们做的事高度重叠：<strong>把模型不知道的东西喂进去。</strong></p>
+<p>LangGPT 的作者说得很直白：结构化的思路就是「像写文章一样写 Prompt」，用标题与子条把内容组织起来，甚至直接借用简历、实验报告的模板。</p>
+<p>这个观察是对的，但它只对了一半。<strong>结构化是一种解法，不是唯一解法。</strong> 如果模型已经知道那些背景，你就不必在句子里重复一遍——你只需要确保它在需要的时候能查到。</p>
+<p>这就是两条路的分岔口：<strong>写进句子，还是放进文件。</strong></p>
+<h2 id="三、我的写法：把结构搬到句子外面"><a href="#三、我的写法：把结构搬到句子外面" class="headerlink" title="三、我的写法：把结构搬到句子外面"></a>三、我的写法：把结构搬到句子外面</h2><p>我自己的指令，平均不到二十个字。典型的长这样：</p>
+<blockquote>
+<p>放仓库，不放大<br>那几本<br>仔细阅读并归档<br>更新，以后每次输入一本书就默认执行该流程</p>
+</blockquote>
+<p>六条特征：</p>
+<ol>
+<li><strong>动词开头，主语省略</strong>——「归档」「更新」「总结」，谁做、做给谁看，都不说。</li>
+<li><strong>零修饰，零情绪</strong>——没有「请」「麻烦」「务必」，指令是裸的。</li>
+<li><strong>一条消息只落一个决策</strong>——不解释取舍，只交结果。</li>
+<li><strong>用边界代替解释</strong>——「不上传」「图片放文本后面」，重点是划出不做什么。</li>
+<li><strong>大量指代</strong>——「那几本」「放仓库」，两三个字代指一整块上下文。</li>
+<li><strong>把一次性指令升级为规则</strong>——「以后每次……就默认执行」。</li>
+</ol>
+<p>其中第 5 条最关键，也最危险。</p>
+<p><strong>这套写法能成立，只有一个原因：约定被写进了别的地方。</strong></p>
+<p>我用两个文件存放那些「本该公司知道」的事：一个记技术事实（技术栈、部署方式、书目、文件位置），一个记人的偏好（语言、节奏、什么时候不要问、什么叫交付）。</p>
+<p>于是「仔细阅读并归档」六个字就够了。归档的格式、页码的口径、编号怎么顺延、索引怎么同步，全在文件里。</p>
+<blockquote>
+<p>极简的成本没有消失，只是从每条指令，转移到了每次建档。</p>
+</blockquote>
+<p>换个说法：<strong>你要么每次多说三十个字，要么之前多花三十分钟。</strong> 长期搭档，后者划算；临时用一次，前者划算。</p>
+<h2 id="四、指代：最像人的地方，也最容易出事"><a href="#四、指代：最像人的地方，也最容易出事" class="headerlink" title="四、指代：最像人的地方，也最容易出事"></a>四、指代：最像人的地方，也最容易出事</h2><p>人说话离不开指代。</p>
+<p>「那几本」「上回那个」「跟之前一样」——这些句子之所以成立，是因为双方共享同一段经历。我对熟人不需要重述背景，不是因为懒，是因为<strong>相信对方知道</strong>。</p>
+<p>注意这一点：<strong>指代是一种信任。</strong> 你不会对陌生人说「那个」，因为你知道他不知道。所以指代用得越自然，说明关系越近。</p>
+<p>AI 这边情形一样，但有个差别：人会自动记住「那几本」，AI 只记得<strong>这一轮对话里出现过的、以及它被允许读取的</strong>。</p>
+<p>指代失效有三种典型场景。</p>
+<p><strong>1. 跨会话。</strong></p>
+<p>昨天聊明白了四本书，今天开一个新会话说「按那套流程归档」，对方手里什么都没有。对人不会这样——人记得。AI 不记得，除非你把记忆写成了文件。</p>
+<p><strong>2. 多任务并行。</strong></p>
+<p>同时开三个窗口，A 窗口说的「那个方案」，B 窗口的 AI 并不知道。人也不会，但人会问一句「你说的是哪个」。AI 通常不问，它会直接猜。</p>
+<p><strong>3. 省略了关键要素。</strong></p>
+<p>「更新」——更新哪个文件、更新成什么样、改完要不要说明？这三个问题在人的语境里可能由默契补全，在 AI 这里只能靠猜，猜错的概率不低。</p>
+<p>所以处理指代，正确做法不是「别用指代」，那会毁掉效率。而是<strong>给指代一个锚</strong>：</p>
+<ul>
+<li>先说：「在记忆文件里，把知识库那一条改成四本书」，再说「以后照这个格式」。</li>
+<li>先说：「这批图按 01 到 05 的顺序」，再说「把后面几张也处理一下」。</li>
+<li>先说：「这篇不上传」，再说「那再总结一版」。</li>
+</ul>
+<p>一句话，<strong>先立规矩，再省字。</strong> 省字没问题，省锚不行。</p>
+<h2 id="五、把-AI-当人的四条具体做法"><a href="#五、把-AI-当人的四条具体做法" class="headerlink" title="五、把 AI 当人的四条具体做法"></a>五、把 AI 当人的四条具体做法</h2><p>前面都是抽象原则，落到操作上，我只做四件事。</p>
+<h3 id="1-告诉它你是谁、这是什么场合"><a href="#1-告诉它你是谁、这是什么场合" class="headerlink" title="1. 告诉它你是谁、这是什么场合"></a>1. 告诉它你是谁、这是什么场合</h3><p>不是写「你是一位资深专家」这种空话，而是给真实处境：「我在维护一个 Hexo 博客，笔记在某目录，我要写系列第二篇」。角色设定真正的价值不在扮演专家，而在于<strong>让模型知道用什么尺度回答</strong>。给一个学生讲和给一个同行讲，同一个问题的答案完全不同。</p>
+<h3 id="2-告诉它后果"><a href="#2-告诉它后果" class="headerlink" title="2. 告诉它后果"></a>2. 告诉它后果</h3><p>人都知道「这个要发给客户」和「这个先给我看看」的差别。AI 不知道，除非你说。「要上传到线上」「要删掉旧文件」「只是草稿，不必保存」——后果一交代，谨慎程度自动变化。</p>
+<h3 id="3-说清楚不要什么"><a href="#3-说清楚不要什么" class="headerlink" title="3. 说清楚不要什么"></a>3. 说清楚不要什么</h3><p>正面指令容易写，反面边界最容易漏。「不要改动其他文章」「不要重新排版」「不要加小标题」——这些句子往往比正面要求更能决定结果。人会因为「这事不该我碰」而收手，AI 靠你说。</p>
+<h3 id="4-允许它说不知道"><a href="#4-允许它说不知道" class="headerlink" title="4. 允许它说不知道"></a>4. 允许它说不知道</h3><p>可以直接要求：「不确定的地方标出来，不要编」「如果读不到原文，就说是笔记不是原文」。</p>
+<p>这一条最能区分专业和业余。<strong>把 AI 当成一个会答错的人，你就永远会留出核对的位置；把它当成一个不会错的神，你就永远不会核对。</strong></p>
+<h2 id="六、最小完整指令"><a href="#六、最小完整指令" class="headerlink" title="六、最小完整指令"></a>六、最小完整指令</h2><p>不必写长。四行，三十字以内，就足够从「靠猜」变成「必然对」：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">目标：&lt;动词 + 对象 + 完成态&gt;</span><br><span class="line">边界：&lt;不要做什么&gt;</span><br><span class="line">验收：&lt;怎么算对&gt;</span><br></pre></td></tr></table></figure>
+
+<p>对照一次返工：</p>
+<p><strong>原文</strong></p>
+<blockquote>
+<p>更新</p>
+</blockquote>
+<p><strong>补完</strong></p>
+<blockquote>
+<p>目标：把记忆文件里的知识库条目改成四本书、10 个文件。<br>边界：不动博客相关的内容。<br>验收：改完列出改了哪几行。</p>
+</blockquote>
+<p>从 2 个字到 45 个字，但从「猜对了是运气」变成「猜不对是我的问题」。</p>
+<p>这套模板不必每次都写全。三种场合值得补：</p>
+<ul>
+<li><strong>不可逆动作</strong>——发布、删除、推送、覆盖文件；</li>
+<li><strong>跨会话或跨人</strong>——接手的人没有你的记忆；</li>
+<li><strong>交付标准不唯一</strong>——同一件事可以有三种合格答案时。</li>
+</ul>
+<p>其余的，继续极简。<strong>边界是按风险设置的，不是按礼貌设置的。</strong></p>
+<h2 id="七、定期校准：关系是需要维护的"><a href="#七、定期校准：关系是需要维护的" class="headerlink" title="七、定期校准：关系是需要维护的"></a>七、定期校准：关系是需要维护的</h2><p>前面说的都是「怎么开始」。但长期关系最麻烦的不是开始，是<strong>慢慢地变味</strong>——你没注意，对方也没提醒，三个月后回头一看，说话方式完全不是当初说好的那样。</p>
+<p>朋友之间会有这种事：一个人最近话变少了、变客套了、开始只回「嗯」。有时候是默契，有时候是疏远。分辨的办法只有一个：回头比对。</p>
+<p>对 AI 也一样。我用一个很土的办法：<strong>隔一段时间，让它对自己的语言风格和回答风格做一次总结，然后我拿着这份总结，和最初设定的风格逐条比对。对不上的地方，当场修。</strong></p>
+<p>具体三步。</p>
+<h3 id="1-让它自述"><a href="#1-让它自述" class="headerlink" title="1. 让它自述"></a>1. 让它自述</h3><p>不给例子、不给提示，只让它依据设定描述自己：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">不要参考对话内容，只读你的设定文件，用三句话说明：</span><br><span class="line">你现在的说话风格、你默认的回答结构、你在什么情况下会反问我。</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-让它自查"><a href="#2-让它自查" class="headerlink" title="2. 让它自查"></a>2. 让它自查</h3><p>这一步比上一步有用，因为自述容易说「理想中的自己」，自查才能照出实际表现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">现在读你最近五次的回答，指出哪几处与上面描述不符，逐条列出来。</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-人工比对"><a href="#3-人工比对" class="headerlink" title="3. 人工比对"></a>3. 人工比对</h3><p>把它的自述、它的自查，和你最初写下的风格并排放。差异只有三种：</p>
+<table>
+<thead>
+<tr>
+<th>差异类型</th>
+<th>表现</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>设定没写清</td>
+<td>它「不符合」的地方，其实你从没规定过</td>
+<td>补进文件</td>
+</tr>
+<tr>
+<td>写了没执行</td>
+<td>文件里明明有，它依然偏离</td>
+<td>指令被稀释，需前置或强化</td>
+</tr>
+<tr>
+<td>任务类型变了</td>
+<td>从笔记切到写作，语气自然从报告滑向创作</td>
+<td>先想清楚该不该变</td>
+</tr>
+</tbody></table>
+<p><strong>为什么会漂？</strong> 三个原因：对话变长后，早期设定被上下文压缩挤到边缘；任务类型迁移，风格跟着任务走；记忆文件没更新，它还按旧的你说话。</p>
+<p>这个环路的重点不在 AI，在人。<strong>它给出的自述可能被美化过，它对「不符」的判断也可能不准，所以最后一道必须是人眼。</strong> 这也正好呼应前文——把 AI 当人，就要像对待人一样：别只听他怎么说，要看他怎么做。</p>
+<p>还有一点值得记住：<strong>校准的目的不是让它永远不变，而是让变化是你要的。</strong> 有时候风格确实该跟着任务走，那就在文件里写下来——「写随笔可以放开，做技术归档要收紧」。把变化也变成约定，比强行钉死一个风格更稳。</p>
+<h2 id="八、怎么练出自己的一套"><a href="#八、怎么练出自己的一套" class="headerlink" title="八、怎么练出自己的一套"></a>八、怎么练出自己的一套</h2><p>前面所有内容，教的是判断，不是答案。真正的方法只有四步。</p>
+<p><strong>1. 记录返工。</strong></p>
+<p>哪条指令让你重问了一次、让 AI 多做了一步、给出的东西不是你要的——把这些记下来。返工最多的那一类，就是你最该补的那个字段。有人缺的是背景，有人缺的是格式，有人缺的是「不要什么」。<strong>每个人的缺口都不一样，这就是模板救不了你的原因。</strong></p>
+<p><strong>2. 建立自己的词表。</strong></p>
+<p>你的项目名、文件路径、常用格式、交付习惯，写成一份能被反复读取的文件。它不会让你这条指令变好，但会让你<strong>之后所有指令</strong>都变短。</p>
+<p><strong>3. 每次只改一个变量。</strong></p>
+<p>想验证「加一条边界会不会更好」，就别同时改格式和语气。提示词的效果依赖组合，改多了就分不清是哪一句起了作用。</p>
+<p><strong>4. 定期校准。</strong></p>
+<p>也就是上一节那套流程。频率不用高，三五篇长文或者两三次返工之后做一次就够。它的作用不是提升上限，是<strong>防止下限悄悄滑落</strong>。</p>
+<p>这四步做完，你会发现一件事：<strong>你写提示词的水平，等于你对自己工作方式的了解程度。</strong> 提示词写不清楚，往往是活儿本身没想清楚。</p>
+<h2 id="九、结语"><a href="#九、结语" class="headerlink" title="九、结语"></a>九、结语</h2><p>网上的框架都值得读一遍，然后大部分可以放下。它们解决的是「通用场景下的信息缺失」，而你面对的是你自己的重复劳动——你的项目、你的格式、你的习惯、你的容忍度。</p>
+<p>所以我把 AI 当成人的真正理由，不是它像人，而是只有一个「人」，才需要被交代背景、被划出边界、被承认会犯错，也才需要被定期提醒「你最近有点变了」。</p>
+<p>指代也一样。「那几本」之所以成立，不是因为你省略得漂亮，而是因为你此前把「那几本」是什么，写进了它能读到的地方。</p>
+<p>好的提示词不是写出来的，是养出来的。它长在你的文件里，不长在别人的模板里；它靠的不是一次写对，而是一次次比对、一处处的修正。</p>
+<h2 id="数据与来源"><a href="#数据与来源" class="headerlink" title="数据与来源"></a>数据与来源</h2><ul>
+<li>OpenAI，《Prompt Engineering Guide》：<a target="_blank" rel="noopener" href="https://platform.openai.com/docs/guides/prompt-engineering">platform.openai.com&#x2F;docs&#x2F;guides&#x2F;prompt-engineering</a></li>
+<li>Anthropic，《Prompt engineering overview》：<a target="_blank" rel="noopener" href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview">docs.anthropic.com&#x2F;en&#x2F;docs&#x2F;build-with-claude&#x2F;prompt-engineering&#x2F;overview</a></li>
+<li>云中江树，《构建高性能 Prompt 之路——结构化 Prompt》（LangGPT 项目文档）：<a target="_blank" rel="noopener" href="https://github.com/langgptai/LangGPT">github.com&#x2F;langgptai&#x2F;LangGPT</a></li>
+<li>LangGPT 论文：<em>LangGPT: Rethinking Structured Reusable Prompt Design Framework for LLMs from the Programming Language</em>（arXiv:2402.16929）：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2402.16929">arxiv.org&#x2F;abs&#x2F;2402.16929</a></li>
+<li>吴恩达、OpenAI，《ChatGPT Prompt Engineering for Developers》：DeepLearning.AI 公开课程</li>
+<li>CO-STAR 与 CRISPE 为社区流传的提示词框架，无统一原始出处，本文仅作对照使用</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://rec0o.github.io">Rec0</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://rec0o.github.io/2026/10/31/cyber-friendship-guide/">https://rec0o.github.io/2026/10/31/cyber-friendship-guide/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://rec0o.github.io" target="_blank">Rec0 Space</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%8F%90%E7%A4%BA%E8%AF%8D/">提示词</a><a class="post-meta__tags" href="/tags/AI/">AI</a><a class="post-meta__tags" href="/tags/%E6%96%B9%E6%B3%95%E8%AE%BA/">方法论</a><a class="post-meta__tags" href="/tags/%E5%B7%A5%E4%BD%9C%E6%B5%81/">工作流</a></div><div class="post-share"><div class="social-share" data-image="https://picsum.photos/seed/rec0-prompt/1200/800" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/10/31/friday-night-date/" title="约会在星期五的晚上"><img class="cover" src="/images/friday-night-date/01.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">约会在星期五的晚上</div></div><div class="info-2"><div class="info-item-1">终于等到了莫非定律乐团的巡演。 同一个乐队居然可以同时覆盖先锋电子与复古慵懒 R&amp;B。颇有一种带着赛博朋克 VR 眼镜体验上世纪百老汇的奇妙触感。浪漫与克制的电影化叙事更是一绝，期待未来的作品。      </div></div></div></a></nav><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/226081822?v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Rec0</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">17</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>简介</span></div><div class="announcement_content">浅尝安全与社会工程<br>欢迎来信reco134510@gmail.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%85%88%E6%83%B3%E6%B8%85%E6%A5%9A%E4%BD%A0%E5%9C%A8%E8%B7%9F%E8%B0%81%E8%AF%B4%E8%AF%9D"><span class="toc-number">1.</span> <span class="toc-text">一、先想清楚你在跟谁说话</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%B5%81%E8%A1%8C%E7%9A%84%E6%B5%81%E7%A8%8B%EF%BC%8C%E5%85%B6%E5%AE%9E%E9%83%BD%E5%9C%A8%E8%A1%A5%E5%90%8C%E4%B8%80%E4%BB%B6%E4%BA%8B"><span class="toc-number">2.</span> <span class="toc-text">二、流行的流程，其实都在补同一件事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%88%91%E7%9A%84%E5%86%99%E6%B3%95%EF%BC%9A%E6%8A%8A%E7%BB%93%E6%9E%84%E6%90%AC%E5%88%B0%E5%8F%A5%E5%AD%90%E5%A4%96%E9%9D%A2"><span class="toc-number">3.</span> <span class="toc-text">三、我的写法：把结构搬到句子外面</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%8C%87%E4%BB%A3%EF%BC%9A%E6%9C%80%E5%83%8F%E4%BA%BA%E7%9A%84%E5%9C%B0%E6%96%B9%EF%BC%8C%E4%B9%9F%E6%9C%80%E5%AE%B9%E6%98%93%E5%87%BA%E4%BA%8B"><span class="toc-number">4.</span> <span class="toc-text">四、指代：最像人的地方，也最容易出事</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%8A%8A-AI-%E5%BD%93%E4%BA%BA%E7%9A%84%E5%9B%9B%E6%9D%A1%E5%85%B7%E4%BD%93%E5%81%9A%E6%B3%95"><span class="toc-number">5.</span> <span class="toc-text">五、把 AI 当人的四条具体做法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%91%8A%E8%AF%89%E5%AE%83%E4%BD%A0%E6%98%AF%E8%B0%81%E3%80%81%E8%BF%99%E6%98%AF%E4%BB%80%E4%B9%88%E5%9C%BA%E5%90%88"><span class="toc-number">5.1.</span> <span class="toc-text">1. 告诉它你是谁、这是什么场合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%91%8A%E8%AF%89%E5%AE%83%E5%90%8E%E6%9E%9C"><span class="toc-number">5.2.</span> <span class="toc-text">2. 告诉它后果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%AF%B4%E6%B8%85%E6%A5%9A%E4%B8%8D%E8%A6%81%E4%BB%80%E4%B9%88"><span class="toc-number">5.3.</span> <span class="toc-text">3. 说清楚不要什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%85%81%E8%AE%B8%E5%AE%83%E8%AF%B4%E4%B8%8D%E7%9F%A5%E9%81%93"><span class="toc-number">5.4.</span> <span class="toc-text">4. 允许它说不知道</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%9C%80%E5%B0%8F%E5%AE%8C%E6%95%B4%E6%8C%87%E4%BB%A4"><span class="toc-number">6.</span> <span class="toc-text">六、最小完整指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%AE%9A%E6%9C%9F%E6%A0%A1%E5%87%86%EF%BC%9A%E5%85%B3%E7%B3%BB%E6%98%AF%E9%9C%80%E8%A6%81%E7%BB%B4%E6%8A%A4%E7%9A%84"><span class="toc-number">7.</span> <span class="toc-text">七、定期校准：关系是需要维护的</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%AE%A9%E5%AE%83%E8%87%AA%E8%BF%B0"><span class="toc-number">7.1.</span> <span class="toc-text">1. 让它自述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%AE%A9%E5%AE%83%E8%87%AA%E6%9F%A5"><span class="toc-number">7.2.</span> <span class="toc-text">2. 让它自查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%BA%BA%E5%B7%A5%E6%AF%94%E5%AF%B9"><span class="toc-number">7.3.</span> <span class="toc-text">3. 人工比对</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%8E%E4%B9%88%E7%BB%83%E5%87%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E4%B8%80%E5%A5%97"><span class="toc-number">8.</span> <span class="toc-text">八、怎么练出自己的一套</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E7%BB%93%E8%AF%AD"><span class="toc-number">9.</span> <span class="toc-text">九、结语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%8E%E6%9D%A5%E6%BA%90"><span class="toc-number">10.</span> <span class="toc-text">数据与来源</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By Rec0</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.7.0</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.7.0"></script><script src="/js/main.js?v=5.7.0"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'Rec0o/Rec0o.github.io',
+      'data-repo-id': 'R_kgDOVVA7_g',
+      'data-category-id': 'DIC_kwDOVVA7_s4DJfEZ',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script src="/js/guestbook.js"></script><script src="/js/right-nav.js"></script><script src="/js/gallery.js"></script><script src="/js/loader.js"></script><script src="/vendor/APlayer.min.js"></script><script src="/vendor/Meting.min.js"></script><script src="/js/player.js"></script><script id="canvas_nest" defer="defer" color="88,166,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/dist/canvas-nest.min.js"></script><script src="/vendor/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"]):not([data-fancybox])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      if (!item.parentNode) return
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || ''
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    const responseURL = e.request && e.request.responseURL
+    if (e.request && e.request.status === 404) {
+      false
+        ? pjax.loadUrl('/404.html')
+        : responseURL && (window.location.href = responseURL)
+    } else if (responseURL) {
+      window.location.href = responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
