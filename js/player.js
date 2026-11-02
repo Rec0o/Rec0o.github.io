@@ -1,9 +1,54 @@
 (function () {
   var PLAYLIST_ID = '18521165527';
   var API = 'https://api.injahow.cn/meting/?server=:server&type=:type&id=:id';
+  var STATE_KEY = 'rec0_player_state';
 
   var holder = null;
   var opened = false;
+  var pendingRestore = false;
+
+  /* ---------- 播放状态读写 ---------- */
+  function getAP() {
+    var el = document.querySelector('meting-js');
+    return el && el.aplayer ? el.aplayer : null;
+  }
+
+  function saveState() {
+    var ap = getAP();
+    if (!ap || !ap.audio) return;
+    try {
+      sessionStorage.setItem(STATE_KEY, JSON.stringify({
+        index: (ap.list && ap.list.index) || 0,
+        time: ap.audio.currentTime || 0,
+        playing: !ap.audio.paused
+      }));
+    } catch (e) {}
+  }
+
+  function applyState() {
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || 'null'); } catch (e) {}
+    if (!saved) return;
+
+    var tries = 0;
+    var timer = setInterval(function () {
+      var ap = getAP();
+      if (!ap || !ap.list) {
+        if (++tries > 100) clearInterval(timer);
+        return;
+      }
+      clearInterval(timer);
+      try {
+        if (typeof ap.list.switch === 'function') ap.list.switch(saved.index || 0);
+        setTimeout(function () {
+          try {
+            if (saved.time > 0 && typeof ap.seek === 'function') ap.seek(saved.time);
+            if (saved.playing && typeof ap.play === 'function') ap.play();
+          } catch (e) {}
+        }, 400);
+      } catch (e) {}
+    }, 200);
+  }
 
   /* ---------- 创建播放器（首次打开时才执行） ---------- */
   function build() {
@@ -25,7 +70,7 @@
       ' list-folded="true"' +
       '></meting-js>';
 
-    // 播放器挂在 <body> 下、#body-wrap 之外，PJAX 换页不会销毁它
+    // 挂在 <body> 下、#body-wrap 之外，PJAX 换页不会销毁它
     document.body.appendChild(holder);
 
     var tries = 0;
@@ -34,6 +79,10 @@
       if (root) {
         clearInterval(timer);
         setupDrag(root);
+        if (pendingRestore) {
+          pendingRestore = false;
+          applyState();
+        }
       } else if (++tries > 100) {
         clearInterval(timer);
       }
@@ -48,7 +97,6 @@
     var body = root.querySelector('.aplayer-body');
     if (!body) return;
 
-    // 固定为展开态：取消 narrow 收起状态、隐藏右侧展开条
     root.classList.remove('aplayer-narrow');
     body.style.width = '';
     var switcher = root.querySelector('.aplayer-miniswitcher');
@@ -119,7 +167,10 @@
   function setOpen(open) {
     opened = open;
 
-    if (open && !holder) build();
+    if (open && !holder) {
+      pendingRestore = true;
+      build();
+    }
 
     if (holder) {
       holder.classList.toggle('closed', !open);
@@ -133,7 +184,7 @@
     if (btn) btn.classList.toggle('active', open);
   }
 
-  /* ---------- 在右侧设置面板注入开关按钮 ---------- */
+  /* ---------- 设置面板按钮 ---------- */
   function injectButton() {
     var box = document.getElementById('rightside-config-hide');
     if (!box) return;
@@ -156,8 +207,21 @@
 
   function init() {
     injectButton();
-    // 默认关闭：不创建播放器、不请求歌单
+
+    // 兜底：若播放器因换页被销毁，则重建并续播
+    if (opened && !document.getElementById('rec0-player-holder')) {
+      holder = null;
+      pendingRestore = true;
+      build();
+    }
   }
+
+  // 换页/关闭前记录播放进度
+  document.addEventListener('pjax:send', saveState);
+  window.addEventListener('beforeunload', saveState);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') saveState();
+  });
 
   document.addEventListener('DOMContentLoaded', init);
   document.addEventListener('pjax:complete', init);
