@@ -231,7 +231,10 @@
 
     if (holder) {
       holder.classList.toggle('closed', !open);
-      if (!open && ap && ap.audio) ap.audio.pause();
+    }
+    // APlayer 的 audio 元素不挂在 DOM 上，必须通过实例暂停
+    if (!open && ap && ap.audio) {
+      try { ap.audio.pause(); } catch (e) {}
     }
 
     var btn = document.getElementById('rec0-player-toggle');
