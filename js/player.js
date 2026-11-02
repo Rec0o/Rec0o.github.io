@@ -68,6 +68,11 @@
       signature = signatureOf(list);
       lastSync = Date.now();
 
+      if (typeof APlayer === 'undefined') {
+        holder.innerHTML = '<div style="color:#f85149;padding:12px">播放器脚本未加载，请强制刷新（Ctrl+F5）</div>';
+        return;
+      }
+
       ap = new APlayer({
         container: slot,
         audio: list,
@@ -111,6 +116,14 @@
       if (saved && typeof saved.x === 'number') pos = saved;
     } catch (e) {}
     apply();
+
+    // 若记住的位置在当前视口之外，复位到默认位置
+    var br = body.getBoundingClientRect();
+    if (br.right < 20 || br.bottom < 20 || br.left > window.innerWidth - 20 || br.top > window.innerHeight - 20) {
+      pos = { x: 0, y: 0 };
+      apply();
+      try { localStorage.removeItem('rec0_player_pos'); } catch (e) {}
+    }
 
     var dragging = false, moved = false;
     var sx = 0, sy = 0, ox = 0, oy = 0;
