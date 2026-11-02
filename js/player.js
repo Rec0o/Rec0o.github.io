@@ -1,20 +1,30 @@
 (function () {
   var PLAYLIST_ID = '18521165527';
-  var API = 'https://api.injahow.cn/meting/?server=:server&type=:type&id=:id';
+  var API = 'https://api.injahow.cn/meting/?server=netease&type=playlist&id=' + PLAYLIST_ID;
   var STATE_KEY = 'rec0_player_state';
+  var SYNC_MIN_GAP = 60 * 1000;      // 两次同步的最小间隔
+  var SYNC_INTERVAL = 5 * 60 * 1000; // 定时同步
 
   var holder = null;
+  var ap = null;
   var opened = false;
   var pendingRestore = false;
+  var signature = '';
+  var lastSync = 0;
+  var syncing = false;
 
-  /* ---------- 播放状态读写 ---------- */
-  function getAP() {
-    var el = document.querySelector('meting-js');
-    return el && el.aplayer ? el.aplayer : null;
+  /* ---------- 工具 ---------- */
+  function fetchList() {
+    var url = API + '&r=' + Date.now() + Math.random();
+    return fetch(url, { cache: 'no-store' }).then(function (r) { return r.json(); });
   }
 
+  function signatureOf(list) {
+    return list.map(function (x) { return x.url || ''; }).join('|');
+  }
+
+  /* ---------- 播放状态 ---------- */
   function saveState() {
-    var ap = getAP();
     if (!ap || !ap.audio) return;
     try {
       sessionStorage.setItem(STATE_KEY, JSON.stringify({
@@ -25,75 +35,66 @@
     } catch (e) {}
   }
 
-  function applyState() {
+  function restoreState() {
     var saved = null;
     try { saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || 'null'); } catch (e) {}
-    if (!saved) return;
-
-    var tries = 0;
-    var timer = setInterval(function () {
-      var ap = getAP();
-      if (!ap || !ap.list) {
-        if (++tries > 100) clearInterval(timer);
-        return;
-      }
-      clearInterval(timer);
-      try {
-        if (typeof ap.list.switch === 'function') ap.list.switch(saved.index || 0);
-        setTimeout(function () {
-          try {
-            if (saved.time > 0 && typeof ap.seek === 'function') ap.seek(saved.time);
-            if (saved.playing && typeof ap.play === 'function') ap.play();
-          } catch (e) {}
-        }, 400);
-      } catch (e) {}
-    }, 200);
+    if (!saved || !ap) return;
+    try {
+      if (typeof ap.list.switch === 'function') ap.list.switch(saved.index || 0);
+      setTimeout(function () {
+        try {
+          if (saved.time > 0 && typeof ap.seek === 'function') ap.seek(saved.time);
+          if (saved.playing && typeof ap.play === 'function') ap.play();
+        } catch (e) {}
+      }, 400);
+    } catch (e) {}
   }
 
-  /* ---------- 创建播放器（首次打开时才执行） ---------- */
+  /* ---------- 创建播放器 ---------- */
   function build() {
     if (holder) return;
 
     holder = document.createElement('div');
     holder.id = 'rec0-player-holder';
-    holder.innerHTML =
-      '<meting-js' +
-      ' api="' + API + '"' +
-      ' server="netease"' +
-      ' type="playlist"' +
-      ' id="' + PLAYLIST_ID + '"' +
-      ' fixed="true"' +
-      ' mini="true"' +
-      ' autoplay="false"' +
-      ' preload="none"' +
-      ' theme="#58a6ff"' +
-      ' list-folded="true"' +
-      '></meting-js>';
+    var slot = document.createElement('div');
+    holder.appendChild(slot);
+    document.body.appendChild(holder); // 在 #body-wrap 之外，PJAX 不会销毁
 
-    // 挂在 <body> 下、#body-wrap 之外，PJAX 换页不会销毁它
-    document.body.appendChild(holder);
-
-    var tries = 0;
-    var timer = setInterval(function () {
-      var root = document.querySelector('.aplayer.aplayer-fixed');
-      if (root) {
-        clearInterval(timer);
-        setupDrag(root);
-        if (pendingRestore) {
-          pendingRestore = false;
-          applyState();
-        }
-      } else if (++tries > 100) {
-        clearInterval(timer);
+    fetchList().then(function (list) {
+      if (!Array.isArray(list) || !list.length) {
+        holder.innerHTML = '<div style="color:#8b949e;padding:12px">歌单加载失败</div>';
+        return;
       }
-    }, 200);
+      signature = signatureOf(list);
+      lastSync = Date.now();
+
+      ap = new APlayer({
+        container: slot,
+        audio: list,
+        fixed: true,
+        mini: true,
+        autoplay: false,
+        preload: 'none',
+        theme: '#58a6ff',
+        listFolded: true,
+        listMaxHeight: '260px',
+        lrcType: 3,
+        storageName: 'rec0-ap'
+      });
+
+      var root = holder.querySelector('.aplayer');
+      if (root) setupFixed(root);
+      if (pendingRestore) {
+        pendingRestore = false;
+        restoreState();
+      }
+    }).catch(function () {
+      holder.innerHTML = '<div style="color:#8b949e;padding:12px">歌单加载失败，请检查网络</div>';
+    });
   }
 
-  /* ---------- 拖动 + 固定展开状态 ---------- */
-  function setupDrag(root) {
-    if (root.dataset.rec0Drag) return;
-    root.dataset.rec0Drag = '1';
-
+  /* ---------- 固定展开态 + 拖动 ---------- */
+  function setupFixed(root) {
     var body = root.querySelector('.aplayer-body');
     if (!body) return;
 
@@ -111,35 +112,24 @@
     } catch (e) {}
     apply();
 
-    var dragging = false;
-    var moved = false;
+    var dragging = false, moved = false;
     var sx = 0, sy = 0, ox = 0, oy = 0;
 
     function apply() {
       holder.style.transform = 'translate(' + pos.x + 'px,' + pos.y + 'px)';
     }
-
-    function start(x, y) {
-      dragging = true;
-      moved = false;
-      sx = x; sy = y; ox = pos.x; oy = pos.y;
-    }
-
+    function start(x, y) { dragging = true; moved = false; sx = x; sy = y; ox = pos.x; oy = pos.y; }
     function move(x, y) {
       if (!dragging) return;
       var dx = x - sx, dy = y - sy;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-      pos.x = ox + dx;
-      pos.y = oy + dy;
+      pos.x = ox + dx; pos.y = oy + dy;
       apply();
     }
-
     function end() {
       if (!dragging) return;
       dragging = false;
-      if (moved) {
-        try { localStorage.setItem('rec0_player_pos', JSON.stringify(pos)); } catch (e) {}
-      }
+      if (moved) { try { localStorage.setItem('rec0_player_pos', JSON.stringify(pos)); } catch (e) {} }
     }
 
     body.addEventListener('mousedown', function (e) {
@@ -163,6 +153,58 @@
     document.addEventListener('touchend', end);
   }
 
+  /* ---------- 歌单同步 ---------- */
+  function syncNow(force) {
+    if (!ap || syncing) return;
+    var now = Date.now();
+    if (!force && now - lastSync < SYNC_MIN_GAP) return;
+
+    syncing = true;
+    lastSync = now;
+
+    fetchList().then(function (list) {
+      syncing = false;
+      if (!Array.isArray(list) || !list.length) return;
+
+      var sig = signatureOf(list);
+      if (sig === signature) return; // 无变化
+
+      var audio = ap.audio;
+      var curUrl = audio ? audio.src : '';
+      var curTime = audio ? audio.currentTime : 0;
+      var wasPlaying = audio ? !audio.paused : false;
+
+      var idx = -1;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].url === curUrl) { idx = i; break; }
+      }
+
+      signature = sig;
+
+      try {
+        ap.list.clear();
+        ap.list.add(list);
+
+        if (idx >= 0) {
+          ap.list.switch(idx);
+          setTimeout(function () {
+            try {
+              if (curTime > 0) ap.seek(curTime);
+              if (wasPlaying) ap.play();
+            } catch (e) {}
+          }, 300);
+        } else {
+          if (curUrl) {
+            try { ap.notice('当前歌曲已从歌单移除', 2200); } catch (e) {}
+          }
+          if (list.length) ap.list.switch(0);
+        }
+      } catch (e) {}
+    }).catch(function () {
+      syncing = false;
+    });
+  }
+
   /* ---------- 开关 ---------- */
   function setOpen(open) {
     opened = open;
@@ -170,14 +212,13 @@
     if (open && !holder) {
       pendingRestore = true;
       build();
+    } else if (open) {
+      syncNow(true); // 每次打开都拉一次最新歌单
     }
 
     if (holder) {
       holder.classList.toggle('closed', !open);
-      if (!open) {
-        var audio = holder.querySelector('audio');
-        if (audio) audio.pause();
-      }
+      if (!open && ap && ap.audio) ap.audio.pause();
     }
 
     var btn = document.getElementById('rec0-player-toggle');
@@ -197,9 +238,7 @@
     btn.type = 'button';
     btn.title = '音乐播放器';
     btn.innerHTML = '<i class="fas fa-music"></i>';
-    btn.addEventListener('click', function () {
-      setOpen(!opened);
-    });
+    btn.addEventListener('click', function () { setOpen(!opened); });
     if (opened) btn.classList.add('active');
 
     box.insertBefore(btn, box.firstChild);
@@ -208,15 +247,15 @@
   function init() {
     injectButton();
 
-    // 兜底：若播放器因换页被销毁，则重建并续播
+    // 兜底：若播放器被销毁则重建并续播
     if (opened && !document.getElementById('rec0-player-holder')) {
       holder = null;
+      ap = null;
       pendingRestore = true;
       build();
     }
   }
 
-  // 换页/关闭前记录播放进度
   document.addEventListener('pjax:send', saveState);
   window.addEventListener('beforeunload', saveState);
   document.addEventListener('visibilitychange', function () {
@@ -224,5 +263,13 @@
   });
 
   document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('pjax:complete', init);
+  document.addEventListener('pjax:complete', function () {
+    init();
+    if (opened) syncNow(false);
+  });
+
+  // 页面停留期间定时同步
+  setInterval(function () {
+    if (opened) syncNow(false);
+  }, SYNC_INTERVAL);
 })();
