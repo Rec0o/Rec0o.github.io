@@ -1,0 +1,787 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>当你在登录网站时，网站也在登录你——网络指纹自查 | Rec0 Space</title><meta name="author" content="Rec0"><meta name="copyright" content="Rec0"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1117"><meta name="description" content="你打开一个登录页，还没输入账号，网站已经读完了一轮信息： 你在哪个城市、用哪家运营商、走没走代理；你的系统、浏览器版本、屏幕分辨率、时区、语言；你的显卡、字体、Canvas 渲染结果、音频特征；甚至你的电池状态和 CPU 线程数。 这些信息不需要你点“同意”，也不会弹授权框。它们在你打开页面的那一刻就发生了。 这篇讲五件事：网站到底能看到什么、怎么用现成工具自查、攻击者会怎么把这些数据拼成话术、一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="当你在登录网站时，网站也在登录你——网络指纹自查">
+<meta property="og:url" content="https://rec0o.github.io/2026/11/02/browser-fingerprint-selfcheck/index.html">
+<meta property="og:site_name" content="Rec0 Space">
+<meta property="og:description" content="你打开一个登录页，还没输入账号，网站已经读完了一轮信息： 你在哪个城市、用哪家运营商、走没走代理；你的系统、浏览器版本、屏幕分辨率、时区、语言；你的显卡、字体、Canvas 渲染结果、音频特征；甚至你的电池状态和 CPU 线程数。 这些信息不需要你点“同意”，也不会弹授权框。它们在你打开页面的那一刻就发生了。 这篇讲五件事：网站到底能看到什么、怎么用现成工具自查、攻击者会怎么把这些数据拼成话术、一">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picsum.photos/seed/rec0-fingerprint/1200/800">
+<meta property="article:published_time" content="2026-11-02T15:30:00.000Z">
+<meta property="article:modified_time" content="2026-11-03T09:37:15.583Z">
+<meta property="article:author" content="Rec0">
+<meta property="article:tag" content="信息安全">
+<meta property="article:tag" content="浏览器指纹">
+<meta property="article:tag" content="自查">
+<meta property="article:tag" content="隐私">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picsum.photos/seed/rec0-fingerprint/1200/800"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "当你在登录网站时，网站也在登录你——网络指纹自查",
+  "url": "https://rec0o.github.io/2026/11/02/browser-fingerprint-selfcheck/",
+  "image": "https://picsum.photos/seed/rec0-fingerprint/1200/800",
+  "datePublished": "2026-11-02T15:30:00.000Z",
+  "dateModified": "2026-11-03T09:37:15.583Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Rec0",
+      "url": "https://rec0o.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/226081822?v=4"><link rel="canonical" href="https://rec0o.github.io/2026/11/02/browser-fingerprint-selfcheck/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.7.0"><link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        const data = { value }
+
+        if (ttl != null) {
+          data.expiry = Date.now() + ttl * 86400000
+        }
+
+        localStorage.setItem(key, JSON.stringify(data))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return
+
+        try {
+          const data = JSON.parse(itemStr)
+
+          if (data.expiry && Date.now() > data.expiry) {
+            localStorage.removeItem(key)
+            return
+          }
+
+          return data.value
+        } catch {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+
+    const scriptCache = new Map()
+    const cssCache = new Map()
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => {
+        if (scriptCache.has(url)) {
+          return scriptCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+
+          script.src = url
+          script.async = true
+
+          for (const key in attr) {
+            script.setAttribute(key, attr[key])
+          }
+
+          script.onload = resolve
+          script.onerror = reject
+
+          document.head.appendChild(script)
+        })
+
+        scriptCache.set(url, promise)
+
+        return promise
+      },
+      getCSS: (url, id) => {
+        if (cssCache.has(url)) {
+          return cssCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+
+          link.rel = 'stylesheet'
+          link.href = url
+
+          if (id) {
+            link.id = id
+          }
+
+          link.onload = resolve
+          link.onerror = reject
+
+          document.head.appendChild(link)
+        })
+
+        cssCache.set(url, promise)
+
+        return promise
+      },
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      const activateDarkMode = () => {
+        document.documentElement.dataset.theme = 'dark'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#0d1117')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.dataset.theme = 'light'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '当你在登录网站时，网站也在登录你——网络指纹自查',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css?v=20261102a"><link rel="stylesheet" href="/css/loader.css?v=20261102a"><link rel="stylesheet" href="/vendor/APlayer.min.css?v=20261102a"><link rel="stylesheet" href="/css/player.css?v=20261102a"><link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin><script>(function(){try{if(localStorage.getItem('rec0_loader_seen'))return;}catch(e){}document.documentElement.classList.add('rec0-loading');})();</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://picsum.photos/seed/rec0-fingerprint/1200/800);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Rec0 Space</span></a><a class="nav-page-title" href="/"><span class="site-name">当你在登录网站时，网站也在登录你——网络指纹自查</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">当你在登录网站时，网站也在登录你——网络指纹自查</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-11-02T15:30:00.000Z" title="发表于 2026-11-02 23:30:00">2026-11-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-11-03T09:37:15.583Z" title="更新于 2026-11-03 17:37:15">2026-11-03</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B/">社会工程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>你打开一个登录页，还没输入账号，网站已经读完了一轮信息：</p>
+<p>你在哪个城市、用哪家运营商、走没走代理；你的系统、浏览器版本、屏幕分辨率、时区、语言；你的显卡、字体、Canvas 渲染结果、音频特征；甚至你的电池状态和 CPU 线程数。</p>
+<p>这些信息不需要你点“同意”，也不会弹授权框。它们在你打开页面的那一刻就发生了。</p>
+<p>这篇讲五件事：网站到底能看到什么、怎么用现成工具自查、攻击者会怎么把这些数据拼成话术、一次可复刻的授权演练，以及哪些“隐身”其实是错觉。</p>
+<h2 id="一、你登录之前，网站已经读完了你"><a href="#一、你登录之前，网站已经读完了你" class="headerlink" title="一、你登录之前，网站已经读完了你"></a>一、你登录之前，网站已经读完了你</h2><p>一个典型的中文自检站（<code>who.1ms.dog</code>）会在一次访问里读取 80 多项信息，大致分五层：</p>
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>网站能读到什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务器侧</td>
+<td>IP、IPv6、ASN&#x2F;运营商、DNS 服务器、反向解析、TLS 版本与加密套件、TLS 指纹、数据中心与延迟</td>
+</tr>
+<tr>
+<td>请求头</td>
+<td>User-Agent、Accept-Language、Client Hints、压缩方式、DNT、Referer</td>
+</tr>
+<tr>
+<td>语言与地区</td>
+<td>浏览器语言、区域设置、系统时区、时钟格式、一周起始日、键盘布局</td>
+</tr>
+<tr>
+<td>指纹</td>
+<td>Canvas、WebGL、音频、数学函数、Emoji 版本、字体列表、综合哈希</td>
+</tr>
+<tr>
+<td>设备</td>
+<td>操作系统、浏览器、CPU 架构与线程数、内存、屏幕、刷新率、显卡、电池、摄像头&#x2F;麦克风数量、网络类型</td>
+</tr>
+</tbody></table>
+<p>页面还会给一个“综合指纹 ID”，并提示你：换网站、开无痕、开 VPN，它都可能不变。</p>
+<p>这就是浏览器指纹（browser fingerprinting）的核心：<strong>不靠 Cookie，靠一组稳定特征的组合来认人。</strong></p>
+<h2 id="二、为什么这件事值得自查"><a href="#二、为什么这件事值得自查" class="headerlink" title="二、为什么这件事值得自查"></a>二、为什么这件事值得自查</h2><h3 id="1-清-Cookie-不等于隐身"><a href="#1-清-Cookie-不等于隐身" class="headerlink" title="1. 清 Cookie 不等于隐身"></a>1. 清 Cookie 不等于隐身</h3><p>Cookie 是网站存在你浏览器里的小纸条，清掉就没了。指纹不是纸条，是从你的设备和浏览器现场算出来的。只要特征组合足够独特，网站换一种方式仍然能把你认出来。</p>
+<h3 id="2-它会被用于精准社工"><a href="#2-它会被用于精准社工" class="headerlink" title="2. 它会被用于精准社工"></a>2. 它会被用于精准社工</h3><p>知道你的系统、浏览器、地区、语言、常用时区，钓鱼邮件和电话就能写得更像真的：</p>
+<ul>
+<li>“您的 Windows 设备需要更新”——而你确实用 Windows；</li>
+<li>“您在华东地区的登录异常”——而你确实在那个时区；</li>
+<li>“请用 Chrome 打开这个页面”——而你确实是 Chrome。</li>
+</ul>
+<p>单条信息不敏感，组合起来会显著提高话术的可信度。</p>
+<h3 id="3-它也是风控和反欺诈的工具"><a href="#3-它也是风控和反欺诈的工具" class="headerlink" title="3. 它也是风控和反欺诈的工具"></a>3. 它也是风控和反欺诈的工具</h3><p>需要说清楚：指纹识别本身不是坏事。银行、支付、电商用它识别同一设备上的多账号、异常登录、自动化脚本。对普通用户来说，它也在挡掉一部分盗号与刷单。</p>
+<p>问题不在于“被识别”，而在于<strong>你不知道自己被识别了多少、被谁识别、用来做什么</strong>。</p>
+<h3 id="4-它暴露的不只是隐私，还有攻击面"><a href="#4-它暴露的不只是隐私，还有攻击面" class="headerlink" title="4. 它暴露的不只是隐私，还有攻击面"></a>4. 它暴露的不只是隐私，还有攻击面</h3><ul>
+<li>浏览器版本、插件列表：攻击者可据此选择已知漏洞；</li>
+<li>内网 IP、WebRTC 地址：可能暴露真实网络位置；</li>
+<li>时区与语言：可用于判断是否在使用代理，或用于地理定位。</li>
+</ul>
+<h2 id="三、自查工具总表"><a href="#三、自查工具总表" class="headerlink" title="三、自查工具总表"></a>三、自查工具总表</h2><p>按能力分四类。中文界面优先的会标注。</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>主要能力</th>
+<th>中文</th>
+<th>评分&#x2F;结论</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1ms.dog</strong> <code>who.1ms.dog/zh-cn/</code></td>
+<td>综合体检：IP&#x2F;ASN&#x2F;DNS&#x2F;TLS&#x2F;请求头&#x2F;指纹&#x2F;设备</td>
+<td>是</td>
+<td>有综合指纹 ID</td>
+<td>第一次自查</td>
+</tr>
+<tr>
+<td><strong>BrowserLeaks</strong> <code>browserleaks.com</code></td>
+<td>分项原始值：IP、WebRTC、DNS、Canvas、WebGL、字体、TLS</td>
+<td>否</td>
+<td>不给结论</td>
+<td>逐项排查</td>
+</tr>
+<tr>
+<td><strong>BrowserScan</strong> <code>browserscan.net/zh</code></td>
+<td>指纹、DNS&#x2F;WebRTC 泄露、TLS、Client Hints、插件、机器人检测</td>
+<td>是</td>
+<td>部分有评分</td>
+<td>中文用户、分项检查</td>
+</tr>
+<tr>
+<td><strong>AmIUnique</strong> <code>amiunique.org</code></td>
+<td>与访客库比较，给出指纹稀有度</td>
+<td>否</td>
+<td>稀有度统计</td>
+<td>看“我有多独特”</td>
+</tr>
+<tr>
+<td><strong>Cover Your Tracks</strong> <code>coveryourtracks.eff.org</code></td>
+<td>追踪器拦截效果 + 指纹唯一性</td>
+<td>否</td>
+<td>有结论</td>
+<td>评估隐私配置</td>
+</tr>
+<tr>
+<td><strong>CreepJS</strong> <code>abrahamjuliot.github.io/creepjs/</code></td>
+<td>检测浏览器返回值是否被篡改&#x2F;伪装</td>
+<td>否</td>
+<td>分项百分比</td>
+<td>排查“伪装是否一致”</td>
+</tr>
+<tr>
+<td><strong>Pixelscan</strong> <code>pixelscan.net</code></td>
+<td>指纹一致性、伪装与自动化检测</td>
+<td>否</td>
+<td>单一结论</td>
+<td>看风控视角</td>
+</tr>
+<tr>
+<td><strong>DeviceInfo.me</strong> <code>deviceinfo.me</code></td>
+<td>设备、真实内核、IP、VPN&#x2F;代理、时区</td>
+<td>否</td>
+<td>无</td>
+<td>设备与网络诊断</td>
+</tr>
+<tr>
+<td><strong>ipleak.net</strong></td>
+<td>IP、WebRTC、DNS、Torrent、地理定位</td>
+<td>否</td>
+<td>无</td>
+<td>检查 VPN 泄露</td>
+</tr>
+<tr>
+<td><strong>DNSLeakTest</strong> <code>dnsleaktest.com</code></td>
+<td>DNS 是否走本地运营商</td>
+<td>否</td>
+<td>有结果</td>
+<td>专查 DNS</td>
+</tr>
+<tr>
+<td><strong>ipinfo.io &#x2F; ip.sb &#x2F; bgp.he.net</strong></td>
+<td>IP、ASN、前缀、路由关系</td>
+<td>部分</td>
+<td>无</td>
+<td>查网络身份</td>
+</tr>
+<tr>
+<td><strong>tls.peet.ws</strong></td>
+<td>TLS&#x2F;JA3&#x2F;JA4 指纹原始数据</td>
+<td>否</td>
+<td>无</td>
+<td>查 TLS 指纹</td>
+</tr>
+<tr>
+<td><strong>ipdrop &#x2F; ToDetect &#x2F; BrowserInsight</strong></td>
+<td>中文综合检测，含一致性评分</td>
+<td>是</td>
+<td>部分有</td>
+<td>中文替代</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这些站本身也会看到你的 IP 与指纹。使用前先看它的隐私说明；商业关联也要留意（例如 Pixelscan 与 Multilogin、BrowserScan 与 AdsPower 有关联）。</p>
+</blockquote>
+<h2 id="四、怎么用：按目的分四条路线"><a href="#四、怎么用：按目的分四条路线" class="headerlink" title="四、怎么用：按目的分四条路线"></a>四、怎么用：按目的分四条路线</h2><h3 id="路线-A：5-分钟综合体检"><a href="#路线-A：5-分钟综合体检" class="headerlink" title="路线 A：5 分钟综合体检"></a>路线 A：5 分钟综合体检</h3><p><strong>第 1 步：1ms.dog</strong><br>打开 <code>who.1ms.dog/zh-cn/</code>，从上往下读：</p>
+<ol>
+<li>先看“网站眼里的你”那段结论：地区、系统、浏览器、是否代理。</li>
+<li>再看“全部探测项”：重点看 IP、ASN、DNS、TLS、时区是否与你的实际位置一致。</li>
+<li>记下“综合指纹 ID”。</li>
+<li>开一个无痕窗口再访问一次，比较指纹 ID 是否变化。</li>
+<li>如果用了 VPN，再开 VPN 访问一次，观察哪些值变了、哪些没变。</li>
+</ol>
+<p><strong>第 2 步：BrowserLeaks</strong><br>打开 <code>browserleaks.com</code>，依次看：</p>
+<ul>
+<li><code>/ip</code>：IP、ASN、反向解析、时区；</li>
+<li><code>/webrtc</code>：是否泄露本地&#x2F;真实 IP；</li>
+<li><code>/dns</code>：DNS 请求走了谁；</li>
+<li><code>/canvas</code>、<code>/webgl</code>、<code>/fonts</code>：指纹相关项。</li>
+</ul>
+<p>它不给“安全&#x2F;不安全”的结论，只给原始值，适合逐项确认。</p>
+<p><strong>第 3 步：Cover Your Tracks</strong><br>打开 <code>coveryourtracks.eff.org</code>，运行测试，读两部分：</p>
+<ul>
+<li>追踪器拦截：广告跟踪器、隐形跟踪器是否被挡；</li>
+<li>指纹唯一性：你的浏览器在访客库里是否独特。</li>
+</ul>
+<h3 id="路线-B：看“我有多独特”"><a href="#路线-B：看“我有多独特”" class="headerlink" title="路线 B：看“我有多独特”"></a>路线 B：看“我有多独特”</h3><p><strong>AmIUnique</strong><br>打开 <code>amiunique.org</code>，点击查看自己的指纹，重点看每一项在访客中的占比。占比越低，说明越少见。注意：它会把指纹存入研究数据库，页面上会有说明。</p>
+<p><strong>CreepJS</strong><br>打开 <code>abrahamjuliot.github.io/creepjs/</code>，等它跑完，重点看：</p>
+<ul>
+<li>FP ID 是否稳定；</li>
+<li>各分项是否出现“lies”或异常；</li>
+<li>无痕窗口与普通窗口的结果是否一致。</li>
+</ul>
+<p>CreepJS 不给你“好&#x2F;坏”，它更关心浏览器返回值是否自洽。</p>
+<p><strong>Pixelscan</strong><br>打开 <code>pixelscan.net</code>，看它给的结论：一致、存疑、不一致。它偏“风控视角”，适合理解网站如何判断“这个浏览器是否像真人、是否被伪装”。</p>
+<h3 id="路线-C：检查-VPN-代理是否泄露"><a href="#路线-C：检查-VPN-代理是否泄露" class="headerlink" title="路线 C：检查 VPN &#x2F; 代理是否泄露"></a>路线 C：检查 VPN &#x2F; 代理是否泄露</h3><ol>
+<li><strong>ipleak.net</strong>：看 IP、WebRTC、DNS 三块。如果连了 VPN 却看到本地运营商 IP 或本地 DNS，就是泄露。</li>
+<li><strong>DNSLeakTest</strong>：专测 DNS，选择标准测试，看解析服务器归属。</li>
+<li><strong>BrowserLeaks <code>/webrtc</code></strong>：单独确认 WebRTC 是否绕过代理暴露真实地址。</li>
+</ol>
+<h3 id="路线-D：查网络身份与-TLS"><a href="#路线-D：查网络身份与-TLS" class="headerlink" title="路线 D：查网络身份与 TLS"></a>路线 D：查网络身份与 TLS</h3><ol>
+<li><strong>ipinfo.io</strong> 或 <strong>ip.sb</strong>：看 IP、ASN、运营商、城市。</li>
+<li><strong>bgp.he.net</strong>：输入 IP 或 ASN，看前缀与路由关系。</li>
+<li><strong>tls.peet.ws&#x2F;api&#x2F;all</strong>：看 JA3&#x2F;JA4、TLS 扩展、加密套件。它偏技术，适合排查“为什么换了 IP 仍被识别为同一客户端”。</li>
+</ol>
+<h2 id="五、读懂结果：五个常见误判"><a href="#五、读懂结果：五个常见误判" class="headerlink" title="五、读懂结果：五个常见误判"></a>五、读懂结果：五个常见误判</h2><h3 id="1-“我的指纹独一无二，说明我被跟踪了”"><a href="#1-“我的指纹独一无二，说明我被跟踪了”" class="headerlink" title="1. “我的指纹独一无二，说明我被跟踪了”"></a>1. “我的指纹独一无二，说明我被跟踪了”</h3><p>不一定。指纹独特只说明“可识别性高”，是否被跟踪取决于网站是否使用、是否存储、是否跨站关联。很多风控系统本来就需要识别设备。</p>
+<h3 id="2-“开无痕就安全了”"><a href="#2-“开无痕就安全了”" class="headerlink" title="2. “开无痕就安全了”"></a>2. “开无痕就安全了”</h3><p>无痕只清理本地 Cookie、缓存与历史，不改变 Canvas、字体、屏幕、时区这些特征。指纹 ID 很可能不变。</p>
+<h3 id="3-“挂了-VPN-就隐身了”"><a href="#3-“挂了-VPN-就隐身了”" class="headerlink" title="3. “挂了 VPN 就隐身了”"></a>3. “挂了 VPN 就隐身了”</h3><p>VPN 改变的是出口 IP 与部分网络路径，不改变浏览器指纹。很多站点会同时看 IP 与时区、语言是否匹配；IP 在海外、时区在国内，本身就是异常信号。</p>
+<h3 id="4-“扩展装得越多越安全”"><a href="#4-“扩展装得越多越安全”" class="headerlink" title="4. “扩展装得越多越安全”"></a>4. “扩展装得越多越安全”</h3><p>扩展会改变浏览器行为，也可能增加指纹独特性。一个少见的扩展组合，反而更容易被认出来。</p>
+<h3 id="5-“不同网站的分数可以比较”"><a href="#5-“不同网站的分数可以比较”" class="headerlink" title="5. “不同网站的分数可以比较”"></a>5. “不同网站的分数可以比较”</h3><p>不能。每个站的访客库、算法、判定标准都不同。A 站 70 分、B 站 30 分，不说明你“变安全了”或“变危险了”。</p>
+<h2 id="六、反面教学：攻击者会怎么读这些数据"><a href="#六、反面教学：攻击者会怎么读这些数据" class="headerlink" title="六、反面教学：攻击者会怎么读这些数据"></a>六、反面教学：攻击者会怎么读这些数据</h2><p>把前面那些“网站能看到什么”换成攻击者视角，会发现它们不是一堆参数，而是一条<strong>从设备到话术</strong>的流水线。</p>
+<h3 id="1-攻击者的阅读顺序"><a href="#1-攻击者的阅读顺序" class="headerlink" title="1. 攻击者的阅读顺序"></a>1. 攻击者的阅读顺序</h3><ol>
+<li><strong>先分人和机器</strong>：IP 是机房还是住宅？ASN 是云厂商还是运营商？时区与 IP 所在地是否一致？——判断目标是否在用 VPN、代理，或是否值得继续。</li>
+<li><strong>再看设备</strong>：UA 与 Client Hints 指向 Windows 还是 macOS、桌面还是手机；屏幕、字体、Canvas 是否像真实用户，还是像自动化环境。</li>
+<li><strong>再看习惯</strong>：公开帖子的发布时间、语言、地理位置、常用平台；这些决定“什么时候联系最自然”。</li>
+<li><strong>最后才设计话术</strong>：IT、供应商、HR、银行、快递——选一个与设备、时间、身份都匹配的角色。</li>
+</ol>
+<p>注意顺序：<strong>先确认环境，再设计故事。</strong> 反过来，故事很容易露馅。</p>
+<h3 id="2-工具映射：每个阶段看什么、怎么断"><a href="#2-工具映射：每个阶段看什么、怎么断" class="headerlink" title="2. 工具映射：每个阶段看什么、怎么断"></a>2. 工具映射：每个阶段看什么、怎么断</h3><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>常见工具</th>
+<th>攻击者想确认什么</th>
+<th>防御动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>网络定位</td>
+<td>ipinfo.io、bgp.he.net、1ms.dog</td>
+<td>出口地区、ASN、住宅&#x2F;机房、是否代理</td>
+<td>出口 IP 与系统时区保持一致；不滥用免费代理</td>
+</tr>
+<tr>
+<td>泄露排查</td>
+<td>ipleak.net、BrowserLeaks <code>/webrtc</code>、<code>/dns</code></td>
+<td>WebRTC&#x2F;DNS 是否暴露真实地址</td>
+<td>限制 WebRTC；使用加密 DNS；连 VPN 后复查</td>
+</tr>
+<tr>
+<td>客户端识别</td>
+<td>1ms.dog、BrowserLeaks、CreepJS</td>
+<td>系统、浏览器、字体、Canvas 是否自洽</td>
+<td>用常见浏览器与默认配置；少装扩展</td>
+</tr>
+<tr>
+<td>唯一性判断</td>
+<td>AmIUnique、Pixelscan</td>
+<td>指纹是否独特、是否像伪装</td>
+<td>分身份、分浏览器；不靠反检测工具“改指纹”</td>
+</tr>
+<tr>
+<td>邮件头分析</td>
+<td>邮件原始头（Received、Message-ID、时区）</td>
+<td>发件服务器、客户端、时区</td>
+<td>不公开原始邮件；对外用企业邮箱</td>
+</tr>
+<tr>
+<td>账号关联</td>
+<td>WhatsMyName、Maigret</td>
+<td>同一昵称还出现在哪些平台</td>
+<td>不同平台不同昵称；公开与私密身份分离</td>
+</tr>
+<tr>
+<td>泄露记录</td>
+<td>Have I Been Pwned</td>
+<td>邮箱是否出现在泄露库</td>
+<td>改密码、开两步验证、不复用</td>
+</tr>
+<tr>
+<td>企业信息</td>
+<td>工商信息、招聘 JD、官网</td>
+<td>组织结构、技术栈、供应商</td>
+<td>信息分级；官网与 JD 少暴露内部细节</td>
+</tr>
+</tbody></table>
+<h3 id="3-一条虚构的攻击链"><a href="#3-一条虚构的攻击链" class="headerlink" title="3. 一条虚构的攻击链"></a>3. 一条虚构的攻击链</h3><p>假设目标是某公司的采购专员，攻击者只做公开信息收集：</p>
+<ol>
+<li>公司官网的“联系我们”列出采购部公共邮箱与座机。</li>
+<li>招聘 JD 提到“使用某办公套件与 ERP”，暗示技术栈。</li>
+<li>目标在公开社区发过一张截图，界面是 Windows 上的某邮件客户端，发布时间是工作日上午。</li>
+<li>公开资料能查到姓名与职务，但没有手机号。</li>
+</ol>
+<p>到这里，攻击者已经可以设计一个很像真的开场：</p>
+<blockquote>
+<p>“我是 IT 服务台的，看到你这边邮件客户端同步异常，需要你配合点一下设置。”</p>
+</blockquote>
+<p>这句话之所以可信，不是因为攻击者技术高，而是因为<strong>设备、软件、时间、职务</strong>四个点都对上了。</p>
+<p>这条链在哪一步会断？</p>
+<ul>
+<li>截图里不出现完整界面、时间、用户名；</li>
+<li>对外联系只用公共邮箱，不公开个人邮箱；</li>
+<li>接到“IT”电话，挂断后用内部通讯录回拨；</li>
+<li>邮件客户端出问题，只从官方入口进，不点对方给的链接；</li>
+<li>任何“验证身份”的请求，都走第二渠道确认。</li>
+</ul>
+<h3 id="4-企业做授权演练时，边界在哪"><a href="#4-企业做授权演练时，边界在哪" class="headerlink" title="4. 企业做授权演练时，边界在哪"></a>4. 企业做授权演练时，边界在哪</h3><p>如果要把这套视角用于自查或红队演练，至少写清四件事：</p>
+<ol>
+<li><strong>书面授权</strong>：范围、目标、时间窗口、允许使用的手段。</li>
+<li><strong>只用公开信息与测试账号</strong>：不碰员工个人账号，不获取凭据。</li>
+<li><strong>不做真实伤害</strong>：不投递恶意附件，不诱导转账，不冒用执法身份。</li>
+<li><strong>记录与脱敏</strong>：过程留日志，报告隐去个人信息，发现真实风险立即停止并通知。</li>
+</ol>
+<h2 id="七、桌面推演：一次授权的-Help-Desk-演练"><a href="#七、桌面推演：一次授权的-Help-Desk-演练" class="headerlink" title="七、桌面推演：一次授权的 Help Desk 演练"></a>七、桌面推演：一次授权的 Help Desk 演练</h2><h3 id="1-场景设定"><a href="#1-场景设定" class="headerlink" title="1. 场景设定"></a>1. 场景设定</h3><ul>
+<li><strong>目标</strong>：某科技公司（下称 A 公司），约 200 人，IT 服务台外包。</li>
+<li><strong>测试目标</strong>：员工在“强制启用 passkey &#x2F; 更新 MFA”话术下，是否会按来电者指示操作。</li>
+<li><strong>授权前提</strong>：书面范围、时间窗口、测试域名、禁用手段、数据留存方式、报告对象。</li>
+</ul>
+<h3 id="2-七步推演"><a href="#2-七步推演" class="headerlink" title="2. 七步推演"></a>2. 七步推演</h3><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>攻击者会怎么想</th>
+<th>教学中的安全复刻</th>
+<th>防御断点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0. 授权</td>
+<td>先确认哪些能做、哪些不能碰</td>
+<td>签范围书：部门、时间、禁用手段</td>
+<td>无授权不演练</td>
+</tr>
+<tr>
+<td>1. 公开信息</td>
+<td>官网、招聘 JD、公开资料能拼出什么</td>
+<td>只收集公开页面，记录来源与时间</td>
+<td>官网少放内部系统名；JD 不暴露技术栈</td>
+</tr>
+<tr>
+<td>2. 选目标</td>
+<td>谁最容易配合？新员工、财务、前台？</td>
+<td>选一名同意参与的测试员工</td>
+<td>新员工入职先培训</td>
+</tr>
+<tr>
+<td>3. 设计 pretext</td>
+<td>什么理由与他的设备、时间、岗位匹配？</td>
+<td>用“IT 服务台 + 安全升级”模板，只写结构，不写真实凭据</td>
+<td>员工知道“IT 不会索要验证码”</td>
+</tr>
+<tr>
+<td>4. 投递</td>
+<td>邮件怎么显得像内部？</td>
+<td>演练专用域名 + 教育页，只记录点击，不收集任何输入</td>
+<td>外部发件人标识、邮件过滤</td>
+</tr>
+<tr>
+<td>5. 电话跟进</td>
+<td>如何用第二个渠道增加可信度？</td>
+<td>用演练号码；按合规要求明确告知这是测试</td>
+<td>挂断后用通讯录回拨</td>
+</tr>
+<tr>
+<td>6. 度量</td>
+<td>点击率、报告率、是否回拨</td>
+<td>只统计点击&#x2F;报告&#x2F;回拨，不记录密码</td>
+<td>报告通道是否足够容易</td>
+</tr>
+<tr>
+<td>7. 复盘</td>
+<td>哪一步最容易被骗？</td>
+<td>脱敏报告，按流程&#x2F;培训&#x2F;技术归因</td>
+<td>修补流程，不惩罚个人</td>
+</tr>
+</tbody></table>
+<h3 id="3-关键话术：只给结构，不给全文"><a href="#3-关键话术：只给结构，不给全文" class="headerlink" title="3. 关键话术：只给结构，不给全文"></a>3. 关键话术：只给结构，不给全文</h3><p>这类电话之所以有效，不是话术多精巧，而是它同时满足了三个条件：</p>
+<ol>
+<li><strong>身份匹配</strong>：对方知道你的岗位、在用的系统、大概的作息。</li>
+<li><strong>理由合理</strong>：安全升级、MFA 迁移、账号异常，都是日常会发生的事。</li>
+<li><strong>动作很小</strong>：只是“点一下”“读一个码”“装个工具”，看起来不严重。</li>
+</ol>
+<p>教学里只保留这个结构：</p>
+<blockquote>
+<p>“我是 IT 服务台的，看到你这边……需要你配合……大概几分钟。”</p>
+</blockquote>
+<p>不写完整脚本，是因为一旦写成可照读的全文，它就会从教学材料变成可复用的话术模板。</p>
+<h3 id="4-这条链在哪一步会断"><a href="#4-这条链在哪一步会断" class="headerlink" title="4. 这条链在哪一步会断"></a>4. 这条链在哪一步会断</h3><ul>
+<li><strong>回拨</strong>：挂断，用公司通讯录里的号码打回去，不用来电显示上的号码。</li>
+<li><strong>不按指示操作</strong>：不打开对方给的链接，不安装远程工具，不读验证码。</li>
+<li><strong>第二渠道</strong>：涉及账号、转账、权限，必须用另一个渠道确认。</li>
+<li><strong>报告</strong>：把可疑来电&#x2F;邮件转给指定邮箱，而不是删掉了事。</li>
+<li><strong>培训</strong>：让员工知道“拒绝”不会给自己惹麻烦。</li>
+</ul>
+<h2 id="八、降低暴露：先定威胁模型"><a href="#八、降低暴露：先定威胁模型" class="headerlink" title="八、降低暴露：先定威胁模型"></a>八、降低暴露：先定威胁模型</h2><p>“隐私”不是一个开关。先问自己：你要防的是谁？</p>
+<ul>
+<li>广告商跨站跟踪？</li>
+<li>陌生人的社工与钓鱼？</li>
+<li>公司&#x2F;学校的内网管理？</li>
+<li>还是高风险环境下的定向攻击？</li>
+</ul>
+<p>不同目标，做法不同。</p>
+<h3 id="普通用户：做减法和分层"><a href="#普通用户：做减法和分层" class="headerlink" title="普通用户：做减法和分层"></a>普通用户：做减法和分层</h3><ol>
+<li><strong>浏览器保持更新</strong>：版本漏洞比指纹更现实。</li>
+<li><strong>少装扩展</strong>：只留必要的，定期清理。</li>
+<li><strong>分开身份</strong>：工作、购物、社交用不同浏览器或不同配置文件，避免一个指纹串起所有账号。</li>
+<li><strong>敏感操作固定环境</strong>：网银、邮箱只在固定浏览器里登录，不随便点邮件链接。</li>
+<li><strong>检查 WebRTC 与 DNS</strong>：用 ipleak、DNSLeakTest 确认没有泄露。</li>
+<li><strong>不要用真实信息做昵称</strong>：减少指纹之外的关联线索。</li>
+</ol>
+<h3 id="高敏感场景：接受取舍"><a href="#高敏感场景：接受取舍" class="headerlink" title="高敏感场景：接受取舍"></a>高敏感场景：接受取舍</h3><ul>
+<li>使用带反指纹保护的浏览器（如 Firefox 的 resistFingerprinting、Brave、Safari 的防跟踪），但要知道它们也可能让某些网站功能异常。</li>
+<li>用 VPN 改变出口 IP，同时保证时区、语言、DNS 与出口地区尽量一致，避免“IP 在海外、系统在国内”的矛盾。</li>
+<li>需要强匿名时，Tor Browser 是更彻底的方案，但速度与可用性会明显下降。</li>
+<li>虚拟机和隔离环境可以进一步分离身份，但维护成本高。</li>
+</ul>
+<h3 id="企业：把指纹当成资产暴露面"><a href="#企业：把指纹当成资产暴露面" class="headerlink" title="企业：把指纹当成资产暴露面"></a>企业：把指纹当成资产暴露面</h3><ul>
+<li>盘点官网、登录页、帮助中心会收集哪些信息；</li>
+<li>不在前端暴露内部系统名、版本号、调试信息；</li>
+<li>对员工做钓鱼与社工培训，而不是只讲“别点链接”；</li>
+<li>把设备指纹用于风控时，明确告知与合规边界。</li>
+</ul>
+<blockquote>
+<p>不建议使用“反检测浏览器”去绕过平台风控、批量注册或伪装身份。那是规避规则，不是隐私保护。</p>
+</blockquote>
+<h2 id="九、结语"><a href="#九、结语" class="headerlink" title="九、结语"></a>九、结语</h2><p>“网站眼里的你”不是一张照片，而是一组稳定的特征：IP 会变，Cookie 会清，但屏幕、字体、时区、渲染结果往往不动。</p>
+<p>理解指纹，不是为了从此消失——那既不现实，也会让正常服务变得更难用。更实际的目标是：</p>
+<blockquote>
+<p>知道自己暴露了什么，减少不必要的独特性，把敏感身份隔离开。</p>
+</blockquote>
+<p>你不需要成为网络上的隐形人，只需要让“认出你”这件事变得不那么容易、不那么划算。</p>
+<hr>
+<h2 id="附：网络指纹自查清单"><a href="#附：网络指纹自查清单" class="headerlink" title="附：网络指纹自查清单"></a>附：网络指纹自查清单</h2><ol>
+<li>打开 <code>who.1ms.dog/zh-cn/</code>，完整读一遍探测项。</li>
+<li>记下综合指纹 ID，开无痕窗口再访问，比较是否变化。</li>
+<li>用 BrowserLeaks 检查 <code>/webrtc</code>、<code>/dns</code> 是否泄露。</li>
+<li>用 Cover Your Tracks 看追踪器拦截与指纹唯一性。</li>
+<li>用 AmIUnique 看自己的指纹稀有度。</li>
+<li>用 CreepJS 检查浏览器返回值是否自洽。</li>
+<li>连 VPN 后用 ipleak 与 DNSLeakTest 复查 IP&#x2F;DNS。</li>
+<li>用 ipinfo.io 与 bgp.he.net 确认 ASN 与出口位置。</li>
+<li>清理不用的浏览器扩展，减少独特性。</li>
+<li>工作、购物、社交分浏览器或分配置文件。</li>
+<li>网银、邮箱只在固定环境登录，不点邮件里的链接。</li>
+<li>每季度复查一次，浏览器大版本更新后也复查。</li>
+</ol>
+<hr>
+<h2 id="数据与来源"><a href="#数据与来源" class="headerlink" title="数据与来源"></a>数据与来源</h2><ul>
+<li>1ms.dog「网站眼里的你是谁」：一次读取 84&#x2F;86 项，含服务器侧、请求头、语言、指纹、设备五层；<a target="_blank" rel="noopener" href="https://who.1ms.dog/zh-cn/">页面</a></li>
+<li>BrowserLeaks：IP、WebRTC、DNS、Canvas、WebGL、字体、TLS 分项测试；<a target="_blank" rel="noopener" href="https://browserleaks.com/">站点</a></li>
+<li>BrowserScan 中文：指纹、DNS&#x2F;WebRTC 泄露、TLS、Client Hints、插件与机器人检测；<a target="_blank" rel="noopener" href="https://www.browserscan.net/zh">站点</a></li>
+<li>AmIUnique：指纹稀有度研究项目；<a target="_blank" rel="noopener" href="https://amiunique.org/">站点</a></li>
+<li>EFF Cover Your Tracks：追踪器拦截与指纹唯一性；<a target="_blank" rel="noopener" href="https://coveryourtracks.eff.org/">站点</a></li>
+<li>CreepJS：检测浏览器指纹返回值与伪装一致性，开源；<a target="_blank" rel="noopener" href="https://abrahamjuliot.github.io/creepjs/">站点</a></li>
+<li>Pixelscan：指纹一致性与自动化检测；<a target="_blank" rel="noopener" href="https://pixelscan.net/">站点</a></li>
+<li>DeviceInfo.me：设备、真实内核、IP、VPN&#x2F;代理诊断；<a target="_blank" rel="noopener" href="https://deviceinfo.me/">站点</a></li>
+<li>ipleak.net：IP、WebRTC、DNS、Torrent 泄露检测；<a target="_blank" rel="noopener" href="https://ipleak.net/">站点</a></li>
+<li>ipinfo.io &#x2F; bgp.he.net &#x2F; tls.peet.ws：IP、ASN、BGP 与 TLS 指纹查询</li>
+<li>中文替代：ipdrop（<a target="_blank" rel="noopener" href="https://ipdrop.io/zh/privacy-test/%EF%BC%89%E3%80%81ToDetect%EF%BC%88https://www.todetect.cn/%EF%BC%89%E3%80%81BrowserInsight%EF%BC%88https://browserinsight.net/zh%EF%BC%89">https://ipdrop.io/zh/privacy-test/）、ToDetect（https://www.todetect.cn/）、BrowserInsight（https://browserinsight.net/zh）</a></li>
+<li>《中华人民共和国个人信息保护法》；<a target="_blank" rel="noopener" href="https://www.gov.cn/xinwen/2021-08/20/content_5632486.htm">官方文本</a></li>
+</ul>
+<p><strong>参考书目</strong></p>
+<ul>
+<li>Kevin D. Mitnick, William L. Simon.《反欺骗的艺术：世界传奇黑客的经历分享》</li>
+<li>Christopher Hadnagy.《社会工程：安全体系中的人性漏洞》</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://rec0o.github.io">Rec0</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://rec0o.github.io/2026/11/02/browser-fingerprint-selfcheck/">https://rec0o.github.io/2026/11/02/browser-fingerprint-selfcheck/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://rec0o.github.io" target="_blank">Rec0 Space</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%8C%87%E7%BA%B9/">浏览器指纹</a><a class="post-meta__tags" href="/tags/%E9%9A%90%E7%A7%81/">隐私</a><a class="post-meta__tags" href="/tags/%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8/">信息安全</a><a class="post-meta__tags" href="/tags/%E8%87%AA%E6%9F%A5/">自查</a></div><div class="post-share"><div class="social-share" data-image="https://picsum.photos/seed/rec0-fingerprint/1200/800" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/11/02/digital-art-intro/" title="数字艺术 · 开篇"><img class="cover" src="https://picsum.photos/seed/rec0-digital-art/1200/900" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">数字艺术 · 开篇</div></div><div class="info-2"><div class="info-item-1">这里用来放数字艺术相关的内容：视觉实验、生成艺术、图像与影像作品。 这个分类页采用图廊样式，每篇的封面图会直接作为格子里的画面，所以发表在这里的文章都需要设置 cover。  </div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/10/31/osint-social-media/" title="同一个用户名，能挖出多少信息？——开源信息收集与平台侧信道"><img class="cover" src="https://picsum.photos/seed/rec0-osint/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-31</div><div class="info-item-2">同一个用户名，能挖出多少信息？——开源信息收集与平台侧信道</div></div><div class="info-2"><div class="info-item-1">一个昵称，在五个平台重复出现；一个脱敏手机号，前后各露几位；一次通讯录上传，把“可能认识的人”变成一张关系图。 攻击者不需要黑进任何系统。他只需要把这些碎片拼起来。 这篇讲开源信息收集（OSINT）：它是什么、从哪几个支点入手、当代平台有哪些“脱敏但可拼”的侧信道，以及普通人怎么把自己的可收集面降下来。 一、OSINT 是什么，不是什么OSINT 是 Open-Source Intelligence 的缩写，通常译为“开源情报”或“公开来源情报”。它的定义很朴素：  从公开可获取的来源收集信息，通过关联与验证，形成对目标的认识。  三个关键词：  公开来源：官网、社交媒体、论坛、招聘信息、工商登记、公开文档、代码仓库。 关联：单条信息价值有限，能把它和其他信息连起来，才有意义。 验证：同名不等于同人，截图不等于事实，必须交叉核对。  它不是什么：  不是入侵。不猜密码、不绕过登录、不抓取私密内容。 不是人肉。不以定位私人住址、骚扰、敲诈为目的。 不是“搜一下就有答案”。大多数时候，是在大量误报里做排除。  从社会工程的角度看，OSINT 是攻击链的第一步。经典教材里反复强调同一件...</div></div></div></a><a class="pagination-related" href="/2026/10/31/social-engineering-intro/" title="社会工程概论：最坚固的系统，往往败给一个电话"><img class="cover" src="https://picsum.photos/seed/rec0-se/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-31</div><div class="info-item-2">社会工程概论：最坚固的系统，往往败给一个电话</div></div><div class="info-2"><div class="info-item-1">防火墙、入侵检测、双因素认证、全盘加密——把能买的都买了，能配的都配了。然后一个人接起电话，报出一串内部术语，前台就放他进了机房。 这不是技术被攻破，而是人被绕过。社会工程（Social Engineering）研究的正是这件事：不破解系统，只破解使用系统的人。 而在 AI 加速渗透攻防两端的今天，这件事正在从“一种攻击手法”变成“最值得下注的突破口”。 一、时代背景：技术防线正在被拉平过去二十年，安全行业的主线是“堆技术”：防火墙、EDR、零信任、加密、多因素认证。这条路仍然重要，但它正在遭遇两个同时发生的变化。 1. AI 把技术攻击的门槛压低了攻击者不再需要自己写钓鱼邮件、自己搜集目标信息、自己校正语法错误。大模型可以把这些环节自动化，而且做得不比人差。 一项经过真人受试者验证的研究（Heiding 等，arXiv:2412.00586，2024）给出了相当直观的对比：    邮件类型 点击率    泛泛的群发钓鱼（对照组） 12%   人类专家撰写的鱼叉邮件 54%   全自动 AI 生成的鱼叉邮件 54%   AI 生成 + 人工微调 56%   全自动 AI 的诱骗效...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/226081822?v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Rec0</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">22</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>简介</span></div><div class="announcement_content">浅尝安全与社会工程<br>欢迎来信reco134510@gmail.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BD%A0%E7%99%BB%E5%BD%95%E4%B9%8B%E5%89%8D%EF%BC%8C%E7%BD%91%E7%AB%99%E5%B7%B2%E7%BB%8F%E8%AF%BB%E5%AE%8C%E4%BA%86%E4%BD%A0"><span class="toc-number">1.</span> <span class="toc-text">一、你登录之前，网站已经读完了你</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%BB%B6%E4%BA%8B%E5%80%BC%E5%BE%97%E8%87%AA%E6%9F%A5"><span class="toc-number">2.</span> <span class="toc-text">二、为什么这件事值得自查</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%B8%85-Cookie-%E4%B8%8D%E7%AD%89%E4%BA%8E%E9%9A%90%E8%BA%AB"><span class="toc-number">2.1.</span> <span class="toc-text">1. 清 Cookie 不等于隐身</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%83%E4%BC%9A%E8%A2%AB%E7%94%A8%E4%BA%8E%E7%B2%BE%E5%87%86%E7%A4%BE%E5%B7%A5"><span class="toc-number">2.2.</span> <span class="toc-text">2. 它会被用于精准社工</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%83%E4%B9%9F%E6%98%AF%E9%A3%8E%E6%8E%A7%E5%92%8C%E5%8F%8D%E6%AC%BA%E8%AF%88%E7%9A%84%E5%B7%A5%E5%85%B7"><span class="toc-number">2.3.</span> <span class="toc-text">3. 它也是风控和反欺诈的工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%AE%83%E6%9A%B4%E9%9C%B2%E7%9A%84%E4%B8%8D%E5%8F%AA%E6%98%AF%E9%9A%90%E7%A7%81%EF%BC%8C%E8%BF%98%E6%9C%89%E6%94%BB%E5%87%BB%E9%9D%A2"><span class="toc-number">2.4.</span> <span class="toc-text">4. 它暴露的不只是隐私，还有攻击面</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%87%AA%E6%9F%A5%E5%B7%A5%E5%85%B7%E6%80%BB%E8%A1%A8"><span class="toc-number">3.</span> <span class="toc-text">三、自查工具总表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%8E%E4%B9%88%E7%94%A8%EF%BC%9A%E6%8C%89%E7%9B%AE%E7%9A%84%E5%88%86%E5%9B%9B%E6%9D%A1%E8%B7%AF%E7%BA%BF"><span class="toc-number">4.</span> <span class="toc-text">四、怎么用：按目的分四条路线</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E7%BA%BF-A%EF%BC%9A5-%E5%88%86%E9%92%9F%E7%BB%BC%E5%90%88%E4%BD%93%E6%A3%80"><span class="toc-number">4.1.</span> <span class="toc-text">路线 A：5 分钟综合体检</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E7%BA%BF-B%EF%BC%9A%E7%9C%8B%E2%80%9C%E6%88%91%E6%9C%89%E5%A4%9A%E7%8B%AC%E7%89%B9%E2%80%9D"><span class="toc-number">4.2.</span> <span class="toc-text">路线 B：看“我有多独特”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E7%BA%BF-C%EF%BC%9A%E6%A3%80%E6%9F%A5-VPN-%E4%BB%A3%E7%90%86%E6%98%AF%E5%90%A6%E6%B3%84%E9%9C%B2"><span class="toc-number">4.3.</span> <span class="toc-text">路线 C：检查 VPN &#x2F; 代理是否泄露</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E7%BA%BF-D%EF%BC%9A%E6%9F%A5%E7%BD%91%E7%BB%9C%E8%BA%AB%E4%BB%BD%E4%B8%8E-TLS"><span class="toc-number">4.4.</span> <span class="toc-text">路线 D：查网络身份与 TLS</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%AF%BB%E6%87%82%E7%BB%93%E6%9E%9C%EF%BC%9A%E4%BA%94%E4%B8%AA%E5%B8%B8%E8%A7%81%E8%AF%AF%E5%88%A4"><span class="toc-number">5.</span> <span class="toc-text">五、读懂结果：五个常见误判</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E2%80%9C%E6%88%91%E7%9A%84%E6%8C%87%E7%BA%B9%E7%8B%AC%E4%B8%80%E6%97%A0%E4%BA%8C%EF%BC%8C%E8%AF%B4%E6%98%8E%E6%88%91%E8%A2%AB%E8%B7%9F%E8%B8%AA%E4%BA%86%E2%80%9D"><span class="toc-number">5.1.</span> <span class="toc-text">1. “我的指纹独一无二，说明我被跟踪了”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E2%80%9C%E5%BC%80%E6%97%A0%E7%97%95%E5%B0%B1%E5%AE%89%E5%85%A8%E4%BA%86%E2%80%9D"><span class="toc-number">5.2.</span> <span class="toc-text">2. “开无痕就安全了”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E2%80%9C%E6%8C%82%E4%BA%86-VPN-%E5%B0%B1%E9%9A%90%E8%BA%AB%E4%BA%86%E2%80%9D"><span class="toc-number">5.3.</span> <span class="toc-text">3. “挂了 VPN 就隐身了”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E2%80%9C%E6%89%A9%E5%B1%95%E8%A3%85%E5%BE%97%E8%B6%8A%E5%A4%9A%E8%B6%8A%E5%AE%89%E5%85%A8%E2%80%9D"><span class="toc-number">5.4.</span> <span class="toc-text">4. “扩展装得越多越安全”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E2%80%9C%E4%B8%8D%E5%90%8C%E7%BD%91%E7%AB%99%E7%9A%84%E5%88%86%E6%95%B0%E5%8F%AF%E4%BB%A5%E6%AF%94%E8%BE%83%E2%80%9D"><span class="toc-number">5.5.</span> <span class="toc-text">5. “不同网站的分数可以比较”</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%8F%8D%E9%9D%A2%E6%95%99%E5%AD%A6%EF%BC%9A%E6%94%BB%E5%87%BB%E8%80%85%E4%BC%9A%E6%80%8E%E4%B9%88%E8%AF%BB%E8%BF%99%E4%BA%9B%E6%95%B0%E6%8D%AE"><span class="toc-number">6.</span> <span class="toc-text">六、反面教学：攻击者会怎么读这些数据</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%94%BB%E5%87%BB%E8%80%85%E7%9A%84%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F"><span class="toc-number">6.1.</span> <span class="toc-text">1. 攻击者的阅读顺序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E6%98%A0%E5%B0%84%EF%BC%9A%E6%AF%8F%E4%B8%AA%E9%98%B6%E6%AE%B5%E7%9C%8B%E4%BB%80%E4%B9%88%E3%80%81%E6%80%8E%E4%B9%88%E6%96%AD"><span class="toc-number">6.2.</span> <span class="toc-text">2. 工具映射：每个阶段看什么、怎么断</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%80%E6%9D%A1%E8%99%9A%E6%9E%84%E7%9A%84%E6%94%BB%E5%87%BB%E9%93%BE"><span class="toc-number">6.3.</span> <span class="toc-text">3. 一条虚构的攻击链</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E4%BC%81%E4%B8%9A%E5%81%9A%E6%8E%88%E6%9D%83%E6%BC%94%E7%BB%83%E6%97%B6%EF%BC%8C%E8%BE%B9%E7%95%8C%E5%9C%A8%E5%93%AA"><span class="toc-number">6.4.</span> <span class="toc-text">4. 企业做授权演练时，边界在哪</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%A1%8C%E9%9D%A2%E6%8E%A8%E6%BC%94%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%8E%88%E6%9D%83%E7%9A%84-Help-Desk-%E6%BC%94%E7%BB%83"><span class="toc-number">7.</span> <span class="toc-text">七、桌面推演：一次授权的 Help Desk 演练</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%9C%BA%E6%99%AF%E8%AE%BE%E5%AE%9A"><span class="toc-number">7.1.</span> <span class="toc-text">1. 场景设定</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%83%E6%AD%A5%E6%8E%A8%E6%BC%94"><span class="toc-number">7.2.</span> <span class="toc-text">2. 七步推演</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%85%B3%E9%94%AE%E8%AF%9D%E6%9C%AF%EF%BC%9A%E5%8F%AA%E7%BB%99%E7%BB%93%E6%9E%84%EF%BC%8C%E4%B8%8D%E7%BB%99%E5%85%A8%E6%96%87"><span class="toc-number">7.3.</span> <span class="toc-text">3. 关键话术：只给结构，不给全文</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E8%BF%99%E6%9D%A1%E9%93%BE%E5%9C%A8%E5%93%AA%E4%B8%80%E6%AD%A5%E4%BC%9A%E6%96%AD"><span class="toc-number">7.4.</span> <span class="toc-text">4. 这条链在哪一步会断</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E9%99%8D%E4%BD%8E%E6%9A%B4%E9%9C%B2%EF%BC%9A%E5%85%88%E5%AE%9A%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B"><span class="toc-number">8.</span> <span class="toc-text">八、降低暴露：先定威胁模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%99%AE%E9%80%9A%E7%94%A8%E6%88%B7%EF%BC%9A%E5%81%9A%E5%87%8F%E6%B3%95%E5%92%8C%E5%88%86%E5%B1%82"><span class="toc-number">8.1.</span> <span class="toc-text">普通用户：做减法和分层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AB%98%E6%95%8F%E6%84%9F%E5%9C%BA%E6%99%AF%EF%BC%9A%E6%8E%A5%E5%8F%97%E5%8F%96%E8%88%8D"><span class="toc-number">8.2.</span> <span class="toc-text">高敏感场景：接受取舍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%81%E4%B8%9A%EF%BC%9A%E6%8A%8A%E6%8C%87%E7%BA%B9%E5%BD%93%E6%88%90%E8%B5%84%E4%BA%A7%E6%9A%B4%E9%9C%B2%E9%9D%A2"><span class="toc-number">8.3.</span> <span class="toc-text">企业：把指纹当成资产暴露面</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E7%BB%93%E8%AF%AD"><span class="toc-number">9.</span> <span class="toc-text">九、结语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E7%BD%91%E7%BB%9C%E6%8C%87%E7%BA%B9%E8%87%AA%E6%9F%A5%E6%B8%85%E5%8D%95"><span class="toc-number">10.</span> <span class="toc-text">附：网络指纹自查清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%8E%E6%9D%A5%E6%BA%90"><span class="toc-number">11.</span> <span class="toc-text">数据与来源</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By Rec0</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.7.0</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.7.0"></script><script src="/js/main.js?v=5.7.0"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'Rec0o/Rec0o.github.io',
+      'data-repo-id': 'R_kgDOVVA7_g',
+      'data-category-id': 'DIC_kwDOVVA7_s4DJfEZ',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script src="/js/guestbook.js?v=20261102a"></script><script src="/js/right-nav.js?v=20261102a"></script><script src="/js/gallery.js?v=20261102a"></script><script src="/js/loader.js?v=20261102a"></script><script src="/vendor/APlayer.min.js?v=20261102a"></script><script src="/js/player.js?v=20261102a"></script><script id="canvas_nest" defer="defer" color="88,166,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="/vendor/canvas-nest.min.js"></script><script src="/vendor/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"]):not([data-fancybox])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      if (!item.parentNode) return
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || ''
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    const responseURL = e.request && e.request.responseURL
+    if (e.request && e.request.status === 404) {
+      true
+        ? pjax.loadUrl('/404.html')
+        : responseURL && (window.location.href = responseURL)
+    } else if (responseURL) {
+      window.location.href = responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
