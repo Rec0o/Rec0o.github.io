@@ -1,0 +1,537 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>钓鱼产业化：黑产流程解析 | Rec0 Space</title><meta name="author" content="Rec0"><meta name="copyright" content="Rec0"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1117"><meta name="description" content="2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件：薪资、津贴有变动，扫码申领。 王女士填完银行卡、身份证号、手机号、卡内余额，最后输入验证码。4 万多元没了。公司 21 人合计被骗 22 万余元。 警方抓了 6 个人，打掉两个团伙：一个破解邮箱，一个洗钱。 一封邮件骗 21 个人，靠的不是文笔，是分工。 这就是“钓鱼产业化”的意思：你看到的是一封邮件，黑产看到的是一条可复用的生">
+<meta property="og:type" content="article">
+<meta property="og:title" content="钓鱼产业化：黑产流程解析">
+<meta property="og:url" content="https://rec0o.github.io/2026/11/05/phishing-industrialization-black-market-workflow/index.html">
+<meta property="og:site_name" content="Rec0 Space">
+<meta property="og:description" content="2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件：薪资、津贴有变动，扫码申领。 王女士填完银行卡、身份证号、手机号、卡内余额，最后输入验证码。4 万多元没了。公司 21 人合计被骗 22 万余元。 警方抓了 6 个人，打掉两个团伙：一个破解邮箱，一个洗钱。 一封邮件骗 21 个人，靠的不是文笔，是分工。 这就是“钓鱼产业化”的意思：你看到的是一封邮件，黑产看到的是一条可复用的生">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picsum.photos/seed/rec0-phishing-chain/1200/800">
+<meta property="article:published_time" content="2026-11-05T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-11-08T14:36:12.244Z">
+<meta property="article:author" content="Rec0">
+<meta property="article:tag" content="反诈">
+<meta property="article:tag" content="社会工程">
+<meta property="article:tag" content="钓鱼">
+<meta property="article:tag" content="黑产">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picsum.photos/seed/rec0-phishing-chain/1200/800"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "钓鱼产业化：黑产流程解析",
+  "url": "https://rec0o.github.io/2026/11/05/phishing-industrialization-black-market-workflow/",
+  "image": "https://picsum.photos/seed/rec0-phishing-chain/1200/800",
+  "datePublished": "2026-11-05T10:00:00.000Z",
+  "dateModified": "2026-11-08T14:36:12.244Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Rec0",
+      "url": "https://rec0o.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/226081822?v=4"><link rel="canonical" href="https://rec0o.github.io/2026/11/05/phishing-industrialization-black-market-workflow/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.7.0"><link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        const data = { value }
+
+        if (ttl != null) {
+          data.expiry = Date.now() + ttl * 86400000
+        }
+
+        localStorage.setItem(key, JSON.stringify(data))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return
+
+        try {
+          const data = JSON.parse(itemStr)
+
+          if (data.expiry && Date.now() > data.expiry) {
+            localStorage.removeItem(key)
+            return
+          }
+
+          return data.value
+        } catch {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+
+    const scriptCache = new Map()
+    const cssCache = new Map()
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => {
+        if (scriptCache.has(url)) {
+          return scriptCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+
+          script.src = url
+          script.async = true
+
+          for (const key in attr) {
+            script.setAttribute(key, attr[key])
+          }
+
+          script.onload = resolve
+          script.onerror = reject
+
+          document.head.appendChild(script)
+        })
+
+        scriptCache.set(url, promise)
+
+        return promise
+      },
+      getCSS: (url, id) => {
+        if (cssCache.has(url)) {
+          return cssCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+
+          link.rel = 'stylesheet'
+          link.href = url
+
+          if (id) {
+            link.id = id
+          }
+
+          link.onload = resolve
+          link.onerror = reject
+
+          document.head.appendChild(link)
+        })
+
+        cssCache.set(url, promise)
+
+        return promise
+      },
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      const activateDarkMode = () => {
+        document.documentElement.dataset.theme = 'dark'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#0d1117')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.dataset.theme = 'light'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '钓鱼产业化：黑产流程解析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css?v=20261102a"><link rel="stylesheet" href="/css/loader.css?v=20261102a"><link rel="stylesheet" href="/vendor/APlayer.min.css?v=20261102a"><link rel="stylesheet" href="/css/player.css?v=20261102a"><link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin><script>(function(){try{if(localStorage.getItem('rec0_loader_seen'))return;}catch(e){}document.documentElement.classList.add('rec0-loading');})();</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://picsum.photos/seed/rec0-phishing-chain/1200/800);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Rec0 Space</span></a><a class="nav-page-title" href="/"><span class="site-name">钓鱼产业化：黑产流程解析</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">钓鱼产业化：黑产流程解析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-11-05T10:00:00.000Z" title="发表于 2026-11-05 18:00:00">2026-11-05</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-11-08T14:36:12.244Z" title="更新于 2026-11-08 22:36:12">2026-11-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B/">社会工程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件：薪资、津贴有变动，扫码申领。</p>
+<p>王女士填完银行卡、身份证号、手机号、卡内余额，最后输入验证码。4 万多元没了。公司 21 人合计被骗 22 万余元。</p>
+<p>警方抓了 6 个人，打掉两个团伙：一个破解邮箱，一个洗钱。</p>
+<p>一封邮件骗 21 个人，靠的不是文笔，是分工。</p>
+<p>这就是“钓鱼产业化”的意思：你看到的是一封邮件，黑产看到的是一条可复用的生产线。有人负责搞账号，有人负责做页面，有人负责投放，有人负责收验证码，最后有人负责把钱洗白。每个环节都有人报价，每个环节都可以外包。</p>
+<h2 id="一、钓鱼的“供给侧改革”"><a href="#一、钓鱼的“供给侧改革”" class="headerlink" title="一、钓鱼的“供给侧改革”"></a>一、钓鱼的“供给侧改革”</h2><p>过去钓鱼靠手艺：会写邮件、会做假页面、会挑目标、会躲检测。现在钓鱼靠采购。</p>
+<p>2026 年 10 月，Microsoft 联合执法机构端掉了一套中文钓鱼生态：CoGUI、Haozi、Iron Man System 三套钓鱼套件，以及配套的 YAM Store。YAM Store 卖的是被入侵或伪造的云环境与凭据；Iron Man System 提供 2300 多个预制诱饵页面，冒充邮政、交通罚单、税务、银行、电信等品牌，按订阅收费。</p>
+<p>自 2026 年 1 月起，这套生态促成了超过 10 亿封钓鱼邮件和短信，覆盖 75,000 多家组织、150 多个国家；其中约 7.5 亿封针对 Microsoft 客户。Microsoft 禁用了 2 万多个相关账号，拦截了 10 万多个用于仿冒和欺诈的域名。</p>
+<p>钓鱼工具已经像 SaaS 一样卖：按月订阅、支持自定义品牌、提供客服和更新。攻击者不需要会写代码，只需要会挑目标、会付钱。</p>
+<p>这不是一封信，是一个产业。</p>
+<h2 id="二、国内数据：一条看不见的流水线"><a href="#二、国内数据：一条看不见的流水线" class="headerlink" title="二、国内数据：一条看不见的流水线"></a>二、国内数据：一条看不见的流水线</h2><p>国内的黑产没有闲着。</p>
+<p>据奇安信与 Coremail 的《2025 年中国企业邮箱安全性研究报告》，国内企业邮箱独立域名约 550 万个，活跃用户 2.2 亿，全年邮件收发量 8925.4 亿封；恶意邮件占比超过 17%，其中钓鱼邮件占 11.5%，同比明显上升；被盗邮箱账号达到 1185.8 万个，连续 6 年增长。</p>
+<p>据威胁猎人《2025 年互联网黑灰产趋势年度报告》，2025 年国内新增作恶手机号超过 1100 万个，同比增加 30.02%；“拦截卡”占比从 2024 年的 39.5% 升到 69.23%。这些号码不是拿来打电话聊天的，是拿来收验证码、发短信、注册账号、绕过风控的。</p>
+<p>360 的《银狐木马年度报告》给的另一组数字更直接：银狐木马背后聚集了 20 多个制作与免杀团伙，过去一年对国内政企发起数万起精准攻击。它的策略也在变：从“精准打击财务、高管”转向“广泛撒网”，单笔金额降到 2000–3000 元，用“企业所得税汇算”“补贴领取”“系统退款”“放假通知”这类周期性场景批量收割。</p>
+<p>还有一个叫“金蝉”的钓鱼电诈套件。它不自己养邮箱，改偷合法邮箱凭证，借用 163 企业邮箱、Microsoft 365、Amazon SES 等正规邮件服务发信；前端页面用 AI 生成，后端人工定义数据窃取接口；投递方式包括企业 IM 群里的二维码。收件人看到的是“正规邮箱服务发来的邮件”，域名信誉、发信 IP 都像真的。</p>
+<p>这些数据不好看，但它们是“产业化”的底色：账号有人卖，工具有人维护，通道有人提供，话术有人更新。</p>
+<h2 id="三、三起案子，三个端口"><a href="#三、三起案子，三个端口" class="headerlink" title="三、三起案子，三个端口"></a>三、三起案子，三个端口</h2><h3 id="1-合肥-21-人补贴邮件：入口是邮箱"><a href="#1-合肥-21-人补贴邮件：入口是邮箱" class="headerlink" title="1. 合肥 21 人补贴邮件：入口是邮箱"></a>1. 合肥 21 人补贴邮件：入口是邮箱</h3><p>这起案子前面已经拆过：内部邮箱被攻破，向员工群发“薪资津贴变动”邮件；员工扫码进入假页面，填写银行卡、身份证、手机号、余额和验证码；钱被转走，最后由洗钱团伙分拆。</p>
+<p>警方打掉的是两个团伙：一个暴力破解邮箱密码，一个洗钱。嫌疑人的“网络黑科技”是从境外网站买的破解软件，中专文化，照样把流程跑通了。</p>
+<p>入口是邮箱，收割是验证码，变现是洗钱。</p>
+<h3 id="2-台州-1000-万冒充老板：入口是“老板”"><a href="#2-台州-1000-万冒充老板：入口是“老板”" class="headerlink" title="2. 台州 1000 万冒充老板：入口是“老板”"></a>2. 台州 1000 万冒充老板：入口是“老板”</h3><p>2023 年 9 月 21 日，浙江台州天台县，一名科技公司财会人员朱某被骗子冒充公司老板拉进微信群，随后按“老板”指令转账 1000 余万元。</p>
+<p>警方接报后 6 小时抓到第一名嫌疑人，最终为该公司挽回损失 600 余万元。</p>
+<p>这起案子没有复杂的技术。它利用的是组织关系：老板在群里、同事在群里、指令很急、金额很大。财务看到的不是“陌生链接”，是“老板在群里说话”。</p>
+<p>入口是“老板”，收割是转账，变现是洗钱。</p>
+<h3 id="3-公安部-5-起“精准投毒”：入口是木马"><a href="#3-公安部-5-起“精准投毒”：入口是木马" class="headerlink" title="3. 公安部 5 起“精准投毒”：入口是木马"></a>3. 公安部 5 起“精准投毒”：入口是木马</h3><p>2024 年 7 月，公安部公布 5 起针对企业财会人员的“精准投毒”典型案例。套路很统一：</p>
+<p>木马伪装成报税工具、办公软件、电子发票、涉税文件，通过邮件或下载链接投递；企业人员一安装，电脑被远程控制；攻击者翻办公文件、聊天记录，摸清企业架构和财务审批流程；再远程控制 QQ、微信，把诈骗账号加进好友列表；最后伪装成老板或客户，拉群、下指令、要求转账。</p>
+<p>其中一起案子，财务人员被冒充老板拉群后转账 1000 余万元。</p>
+<p>入口是木马，收割是财务流程，变现是洗钱。</p>
+<p>三起案子，三个入口，背后是同一套分工。</p>
+<h2 id="四、黑产流程：从账号到洗钱"><a href="#四、黑产流程：从账号到洗钱" class="headerlink" title="四、黑产流程：从账号到洗钱"></a>四、黑产流程：从账号到洗钱</h2><table>
+<thead>
+<tr>
+<th>环节</th>
+<th>谁在做</th>
+<th>具体动作</th>
+<th>产出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>资源</td>
+<td>号商、卡商、数据贩子</td>
+<td>买号、撞库、钓鱼、内部泄露、收卡</td>
+<td>邮箱账号、通讯录、手机号、银行卡、代理 IP</td>
+</tr>
+<tr>
+<td>工具</td>
+<td>套件开发者、木马团伙</td>
+<td>假页面、二维码、远控、群发工具、免杀</td>
+<td>可复用的攻击工具</td>
+</tr>
+<tr>
+<td>投放</td>
+<td>邮件、短信、IM、电话</td>
+<td>内部邮件、补贴通知、发票、老板指令</td>
+<td>触达受害者</td>
+</tr>
+<tr>
+<td>话术</td>
+<td>剧本写手、AI</td>
+<td>税务、补贴、退款、客户变更、系统升级</td>
+<td>可信的叙事</td>
+</tr>
+<tr>
+<td>收割</td>
+<td>一线操作员</td>
+<td>骗凭证、骗验证码、骗转账、骗屏幕共享</td>
+<td>钱和权限</td>
+</tr>
+<tr>
+<td>洗钱</td>
+<td>跑分、水房、两卡、虚拟币</td>
+<td>分散转账、取现、换币、出境</td>
+<td>洗白的资金</td>
+</tr>
+</tbody></table>
+<p>这条链最“先进”的地方，是每个人只做一段。</p>
+<p>写套件的人不投递，投递的人不做页面，做页面的人不收验证码，收验证码的人不洗钱，洗钱的人不直接骗人。每个人都可以说自己“只是打工的”，每条环节都可以换供应商。</p>
+<p>这就是产业化：不是一个人变强了，是一条链变顺了。</p>
+<h2 id="五、为什么这条流水线难打"><a href="#五、为什么这条流水线难打" class="headerlink" title="五、为什么这条流水线难打"></a>五、为什么这条流水线难打</h2><p><strong>1. 工具可复用。</strong><br>一套假页面可以换品牌、换语言、换域名，同时服务很多团伙。打掉一个页面，明天换个域名又上线。</p>
+<p><strong>2. 合法服务被滥用。</strong><br>被盗的 163、Microsoft 365、Amazon SES 账号，发信记录、域名信誉、IP 都是“干净”的。邮件网关看到的是合法服务商，不是陌生服务器。</p>
+<p><strong>3. AI 把成本打下来了。</strong><br>写邮件、做页面、翻译、生成话术、克隆声音，成本都在降。以前需要一个人一天做的事，现在几分钟就能生成。</p>
+<p><strong>4. 数据泄露提供精准目标。</strong><br>姓名、职位、邮箱、手机号、组织关系，在黑产里都是商品。诈骗邮件能叫出你的名字、知道你老板是谁，不是因为它聪明，是因为它买到了数据。</p>
+<p><strong>5. 跨境与分工。</strong><br>账号在境外买，工具在境外维护，钱通过跑分和水房分散，受害者在国内。抓一个人容易，断一条链难。</p>
+<p><strong>6. 受害者走的是正常流程。</strong><br>邮件来自内部邮箱，二维码看起来像公司通知，验证码是“平台要求的”，转账是“老板让的”。杀毒软件防的是样本，防不了“这封邮件看起来像 HR 发的”。</p>
+<h2 id="六、防守：断链，而不是只教人别点"><a href="#六、防守：断链，而不是只教人别点" class="headerlink" title="六、防守：断链，而不是只教人别点"></a>六、防守：断链，而不是只教人别点</h2><h3 id="个人"><a href="#个人" class="headerlink" title="个人"></a>个人</h3><ul>
+<li>内部邮件也要第二渠道确认，尤其是补贴、薪资、报销、账号异常。</li>
+<li>不扫来历不明的二维码；扫码后要填银行卡、身份证、余额的，直接关掉。</li>
+<li>验证码不给任何人，也不填在任何“申领页面”里。</li>
+<li>看到“仅限今日”“逾期视为放弃”，先停三分钟。</li>
+<li>被骗后立刻报警、联系银行，别先忙着自责。</li>
+</ul>
+<h3 id="企业"><a href="#企业" class="headerlink" title="企业"></a>企业</h3><ul>
+<li>邮件安全：SPF、DKIM、DMARC，异常登录、批量外发、陌生设备告警。</li>
+<li>身份安全：MFA、条件访问、高风险操作二次验证；密码&#x2F;MFA 重置走人工复核。</li>
+<li>财务流程：改收款账户、超额转账必须双人复核，用已知号码回拨，不用邮件里的号码。</li>
+<li>员工培训：不只做“钓鱼邮件演练”，也做“内部邮件被攻破”的演练；考核报告率，不只考核点击率。</li>
+<li>供应链：客户、供应商、外包 IT 的邮箱同样可能被攻破，别把“合作方”当免检标签。</li>
+</ul>
+<h3 id="平台与执法"><a href="#平台与执法" class="headerlink" title="平台与执法"></a>平台与执法</h3><ul>
+<li>域名注册商、云服务商、邮件服务商：快速处置仿冒域名、滥用账号。</li>
+<li>支付与银行：异常收款账户、跑分资金链、涉诈卡管控。</li>
+<li>执法：打套件开发者、号商、洗钱团伙，比只抓末端“卡农”更有用。</li>
+</ul>
+<p>打掉一个写套件的，比抓十个取款的更有用；但现实里，取款的更容易抓。所以防守不能只等执法，企业和个人得先把自己的流程堵上。</p>
+<h2 id="七、附：钓鱼者用过的技巧清单"><a href="#七、附：钓鱼者用过的技巧清单" class="headerlink" title="七、附：钓鱼者用过的技巧清单"></a>七、附：钓鱼者用过的技巧清单</h2><p>把前面提到的、以及国内黑产常用的手法，按链路归拢成九类。基本覆盖主流钓鱼技巧，不追求字面上的“穷举”。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>具体手法</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>身份伪装</td>
+<td>冒充老板、同事、客户、供应商、IT、客服、银行、税务、公检法、招聘方</td>
+<td>让受害者相信“对面是自己人”</td>
+</tr>
+<tr>
+<td>渠道伪装</td>
+<td>内部邮箱、企业 IM 群、QQ&#x2F;微信群、短信、电话、二维码、日历邀请、共享文档</td>
+<td>借用受害者每天使用的通道</td>
+</tr>
+<tr>
+<td>心理操纵</td>
+<td>权威、紧迫、稀缺、恐惧、贪婪、好奇、同情、喜好、互惠、从众、一致性、乐于助人</td>
+<td>让受害者先行动，再思考</td>
+</tr>
+<tr>
+<td>内容模板</td>
+<td>补贴、税务、发票、报销、薪资、系统升级、退款、合同、会议、招聘、政策通知</td>
+<td>用日常事务降低戒心</td>
+</tr>
+<tr>
+<td>技术伪装</td>
+<td>相似域名、子域名、短链、二维码、HTML 附件、ZIP&#x2F;RAR、宏、LNK、ISO、SVG、OAuth 授权、AiTM、MFA 疲劳、SIM swap</td>
+<td>绕过邮件网关、EDR 和 MFA</td>
+</tr>
+<tr>
+<td>流程绕过</td>
+<td>密码重置、MFA 重置、改收款账户、索要验证码、共享屏幕、远程协助、拉群、伪造邮件线程</td>
+<td>让“正常流程”替攻击者完成动作</td>
+</tr>
+<tr>
+<td>规避检测</td>
+<td>被盗账号发信、滥用 163&#x2F;M365&#x2F;Amazon SES、动态域名、CDN、图片化正文、加密附件、时间差、地域限制、低频定向</td>
+<td>让邮件看起来像合法通信</td>
+</tr>
+<tr>
+<td>收割方式</td>
+<td>凭证、OTP、银行卡、身份证、人脸、屏幕共享、转账、虚拟币</td>
+<td>把钱或权限拿走</td>
+</tr>
+<tr>
+<td>产业分工</td>
+<td>号商、卡商、套件开发者、免杀团伙、引流、话术、跑分、水房</td>
+<td>把一次攻击拆成可外包的环节</td>
+</tr>
+</tbody></table>
+<p>如果只记三条：</p>
+<ol>
+<li><strong>可信渠道不等于可信身份。</strong> 内部邮箱、老板头像、客服号码，都可以被伪造或接管。</li>
+<li><strong>验证码不是表单字段。</strong> 任何页面让你填短信验证码，先假设它是钓鱼。</li>
+<li><strong>高价值动作要有摩擦。</strong> 改密码、改账户、转账、重置 MFA，都应该多一步独立核验。</li>
+</ol>
+<h2 id="八、结语"><a href="#八、结语" class="headerlink" title="八、结语"></a>八、结语</h2><p>钓鱼不是一封信，是一条流水线。</p>
+<p>你看到的是一封“补贴通知”，黑产看到的是一条可复用的生产线：账号、套件、投放、话术、收割、洗钱，每一段都有人负责，每一段都能换供应商。</p>
+<p>所以防守也不能只盯着那封信。要盯账号怎么来的、工具怎么卖的、邮件怎么发的、钱怎么洗的。断掉任何一环，都比只骂受害者“怎么这么不小心”有用。</p>
+<p>别只教员工“别点链接”。要让他们知道：内部邮件也会骗人，老板的头像不能当身份证，验证码不是用来“证明你是你”的。</p>
+<hr>
+<h2 id="资料与口径"><a href="#资料与口径" class="headerlink" title="资料与口径"></a>资料与口径</h2><p><strong>全球钓鱼产业</strong></p>
+<ul>
+<li>Microsoft, <em>The hidden network: Inside the phishing infrastructure ecosystem powering global cybercrime</em>, 2026-10-14；<a target="_blank" rel="noopener" href="https://www.microsoft.com/en-us/security/blog/2026/10/14/the-hidden-network-inside-the-phishing-infrastructure-ecosystem-powering-global-cybercrime/">Microsoft</a></li>
+<li>SecurityWeek, <em>Microsoft Disrupts Chinese-Language Phishing Market Behind 1B+ Messages</em>, 2026-10；<a target="_blank" rel="noopener" href="https://www.securityweek.com/microsoft-disrupts-chinese-language-phishing-market-behind-1b-messages/">SecurityWeek</a></li>
+<li>The Hacker News, <em>Microsoft Disrupts 3 Phishing Kits Linked to Over 1 Billion Scam Messages</em>, 2026-10；<a target="_blank" rel="noopener" href="https://thehackernews.com/2026/10/microsoft-disrupts-3-phishing-kits.html">THN</a></li>
+<li>The Record, <em>Microsoft takes down 3 major phishing platforms used by Chinese cybercriminals</em>, 2026-10；<a target="_blank" rel="noopener" href="https://therecord.media/microsoft-takes-down-3-major-chinese-phishing-platforms">The Record</a></li>
+</ul>
+<p><strong>国内数据与黑产</strong></p>
+<ul>
+<li>奇安信、Coremail，《2025 年中国企业邮箱安全性研究报告》；<a target="_blank" rel="noopener" href="https://www.qianxin.com/threat/reportdetail?report_id=347">奇安信</a>、<a target="_blank" rel="noopener" href="https://www.cacter.com/news1242.html">CACTER</a></li>
+<li>威胁猎人，《2025 年互联网黑灰产趋势年度报告》；<a target="_blank" rel="noopener" href="https://www.threathunter.cn/research/2025-internet-black-gray-industry-trends-report">威胁猎人</a></li>
+<li>360 数字安全，《2025 银狐木马年度报告》；<a target="_blank" rel="noopener" href="https://www.360.cn/n/12898.html">360</a>、<a target="_blank" rel="noopener" href="https://www.ccidnet.com/news/1095658.jhtml">赛迪网解读</a></li>
+<li>DeepPhish, <em>“金蝉”黑产专项</em>；<a target="_blank" rel="noopener" href="https://deepphish.cn/blog/golden-cicada-campaign/">DeepPhish</a></li>
+<li>CN-SEC, <em>银狐背后的黑手：钓鱼电诈套件金蝉深度揭秘</em>；<a target="_blank" rel="noopener" href="http://cn-sec.com/archives/4189848.html">CN-SEC</a></li>
+<li>福建省公安厅，2025-05-23：《目标财务人员，警惕木马钓鱼类病毒攻击诈骗！》；<a target="_blank" rel="noopener" href="https://gat.fujian.gov.cn/ztzl/fjjffpzxrx/dxal/202505/t20250523_6917425.htm">福建公安</a></li>
+</ul>
+<p><strong>国内案例</strong></p>
+<ul>
+<li>市场星报，2024-08-09：《轻信“领补贴”，21 名员工被骗 22 万余元》；<a target="_blank" rel="noopener" href="http://www.ahscb.com/html/2024-08/09/content_368182.htm">原文</a></li>
+<li>公安部，2024-07-30：5 起针对企业财会人员实施电信网络诈骗典型案例；<a target="_blank" rel="noopener" href="http://society.people.com.cn/n1/2024/0730/c1008-40288846.html">人民网</a>、<a target="_blank" rel="noopener" href="https://www.thepaper.cn/newsDetail_forward_28244080">澎湃新闻</a></li>
+<li>腾讯新闻，2024-07-19：《“跑分”洗钱 3 亿元 这群“卡农”被判了！》；<a target="_blank" rel="noopener" href="https://news.qq.com/rain/a/20240719A08P5500">腾讯新闻</a></li>
+</ul>
+<p><strong>口径说明</strong></p>
+<ul>
+<li>企业邮箱、黑灰产、银狐等数据来自厂商或研究机构报告，统计口径各不相同；引用时保留机构与年份，不把不同口径的数字直接相加。</li>
+<li>国内案例中的公司名、人名多为公开报道中的化名。</li>
+<li>本文数据截至 2026 年 11 月。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://rec0o.github.io">Rec0</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://rec0o.github.io/2026/11/05/phishing-industrialization-black-market-workflow/">https://rec0o.github.io/2026/11/05/phishing-industrialization-black-market-workflow/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://rec0o.github.io" target="_blank">Rec0 Space</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%A4%BE%E4%BC%9A%E5%B7%A5%E7%A8%8B/">社会工程</a><a class="post-meta__tags" href="/tags/%E9%92%93%E9%B1%BC/">钓鱼</a><a class="post-meta__tags" href="/tags/%E9%BB%91%E4%BA%A7/">黑产</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E8%AF%88/">反诈</a></div><div class="post-share"><div class="social-share" data-image="https://picsum.photos/seed/rec0-phishing-chain/1200/800" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/11/05/hefei-2024-labor-subsidy-phishing-review/" title="合肥 2024 年“劳动补贴”内部邮箱钓鱼案复盘与解析"><img class="cover" src="https://picsum.photos/seed/rec0-hefei/1200/800" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">合肥 2024 年“劳动补贴”内部邮箱钓鱼案复盘与解析</div></div><div class="info-2"><div class="info-item-1">2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件，主题大意是：个人职位、薪金和劳动津贴有变动，扫码申领。 王女士扫了码，填了银行卡、姓名、身份证号、手机号、卡内余额，最后输入手机验证码。很快，银行卡被转走 4 万多元。 当天，公司 21 名员工共计被骗 22 万余元。警方后来抓获 6 名嫌疑人，打掉一个暴力破解邮箱密码的团伙和一个洗钱团伙。嫌疑人的“网络黑科技”是从境外网站买的破解软件；中专文化，照样把流程跑通了。 技术含量不高，胜在对流程熟。 把它和 MGM 放在一起看，会发现两条完全不同的攻击链，共用同一套底层逻辑：攻击者没有攻破系统，只是让系统里的人按正常流程做了一个错误动作。 一、先把案子讲清楚   时间 发生了什么    2024 年，案发前 公司内部邮箱被攻破，警方后来打掉一个暴力破解邮箱密码的团伙   同一天 21 名员工收到“薪资、津贴变动”的邮件，附二维码   当天 王女士扫码填写银行卡、身份证、手机号、余额和验证码，4 万多元被转走   当天 公司 21 名员工共计被骗 22 万余元   案发后 警方抓获 6 名嫌疑人，打掉邮箱破解与洗钱两...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/11/05/hefei-2024-labor-subsidy-phishing-review/" title="合肥 2024 年“劳动补贴”内部邮箱钓鱼案复盘与解析"><img class="cover" src="https://picsum.photos/seed/rec0-hefei/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-11-05</div><div class="info-item-2">合肥 2024 年“劳动补贴”内部邮箱钓鱼案复盘与解析</div></div><div class="info-2"><div class="info-item-1">2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件，主题大意是：个人职位、薪金和劳动津贴有变动，扫码申领。 王女士扫了码，填了银行卡、姓名、身份证号、手机号、卡内余额，最后输入手机验证码。很快，银行卡被转走 4 万多元。 当天，公司 21 名员工共计被骗 22 万余元。警方后来抓获 6 名嫌疑人，打掉一个暴力破解邮箱密码的团伙和一个洗钱团伙。嫌疑人的“网络黑科技”是从境外网站买的破解软件；中专文化，照样把流程跑通了。 技术含量不高，胜在对流程熟。 把它和 MGM 放在一起看，会发现两条完全不同的攻击链，共用同一套底层逻辑：攻击者没有攻破系统，只是让系统里的人按正常流程做了一个错误动作。 一、先把案子讲清楚   时间 发生了什么    2024 年，案发前 公司内部邮箱被攻破，警方后来打掉一个暴力破解邮箱密码的团伙   同一天 21 名员工收到“薪资、津贴变动”的邮件，附二维码   当天 王女士扫码填写银行卡、身份证、手机号、余额和验证码，4 万多元被转走   当天 公司 21 名员工共计被骗 22 万余元   案发后 警方抓获 6 名嫌疑人，打掉邮箱破解与洗钱两...</div></div></div></a><a class="pagination-related" href="/2026/10/31/social-engineering-intro/" title="社会工程概论：最坚固的系统，往往败给一个电话"><img class="cover" src="https://picsum.photos/seed/rec0-se/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-31</div><div class="info-item-2">社会工程概论：最坚固的系统，往往败给一个电话</div></div><div class="info-2"><div class="info-item-1">防火墙、入侵检测、双因素认证、全盘加密——把能买的都买了，能配的都配了。然后一个人接起电话，报出一串内部术语，前台就放他进了机房。 这不是技术被攻破，而是人被绕过。社会工程（Social Engineering）研究的正是这件事：不破解系统，只破解使用系统的人。 而在 AI 加速渗透攻防两端的今天，这件事正在从“一种攻击手法”变成“最值得下注的突破口”。 一、时代背景：技术防线正在被拉平过去二十年，安全行业的主线是“堆技术”：防火墙、EDR、零信任、加密、多因素认证。这条路仍然重要，但它正在遭遇两个同时发生的变化。 1. AI 把技术攻击的门槛压低了攻击者不再需要自己写钓鱼邮件、自己搜集目标信息、自己校正语法错误。大模型可以把这些环节自动化，而且做得不比人差。 一项经过真人受试者验证的研究（Heiding 等，arXiv:2412.00586，2024）给出了相当直观的对比：    邮件类型 点击率    泛泛的群发钓鱼（对照组） 12%   人类专家撰写的鱼叉邮件 54%   全自动 AI 生成的鱼叉邮件 54%   AI 生成 + 人工微调 56%   全自动 AI 的诱骗效...</div></div></div></a><a class="pagination-related" href="/2026/10/31/osint-social-media/" title="同一个用户名，能挖出多少信息？——开源信息收集与平台侧信道"><img class="cover" src="https://picsum.photos/seed/rec0-osint/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-31</div><div class="info-item-2">同一个用户名，能挖出多少信息？——开源信息收集与平台侧信道</div></div><div class="info-2"><div class="info-item-1">一个昵称，在五个平台重复出现；一个脱敏手机号，前后各露几位；一次通讯录上传，把“可能认识的人”变成一张关系图。 攻击者不需要黑进任何系统。他只需要把这些碎片拼起来。 这篇讲开源信息收集（OSINT）：它是什么、从哪几个支点入手、当代平台有哪些“脱敏但可拼”的侧信道，以及普通人怎么把自己的可收集面降下来。 一、OSINT 是什么，不是什么OSINT 是 Open-Source Intelligence 的缩写，通常译为“开源情报”或“公开来源情报”。它的定义很朴素：  从公开可获取的来源收集信息，通过关联与验证，形成对目标的认识。  三个关键词：  公开来源：官网、社交媒体、论坛、招聘信息、工商登记、公开文档、代码仓库。 关联：单条信息价值有限，能把它和其他信息连起来，才有意义。 验证：同名不等于同人，截图不等于事实，必须交叉核对。  它不是什么：  不是入侵。不猜密码、不绕过登录、不抓取私密内容。 不是人肉。不以定位私人住址、骚扰、敲诈为目的。 不是“搜一下就有答案”。大多数时候，是在大量误报里做排除。  从社会工程的角度看，OSINT 是攻击链的第一步。经典教材里反复强调同一件...</div></div></div></a><a class="pagination-related" href="/2026/11/05/mgm-resorts-2023-attack-review/" title="MGM Resorts 2023 年攻击流程复盘与解析"><img class="cover" src="https://picsum.photos/seed/rec0-mgm/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-11-05</div><div class="info-item-2">MGM Resorts 2023 年攻击流程复盘与解析</div></div><div class="info-2"><div class="info-item-1">2023 年 9 月，拉斯维加斯。MGM Grand 的老虎机黑着，客人拿着失效的房卡站在走廊里，前台只能用纸笔登记。预订系统、支付终端、邮箱、门禁，一个接一个停摆。 这不是电影里的“断网攻击”。MGM 后来在给美国证券交易委员会的 8-K 里写下的数字是：约 1 亿美元的损失。够买很多安全产品了。可惜这次的问题，安全产品不太好背锅。 更反直觉的是入口。据多家媒体和事后复盘，攻击者没有找到零日漏洞，也没有先投一封带恶意附件的邮件。他们做的是：上 LinkedIn 找一个员工，然后打一通电话给 IT help desk。 一通电话，十天停摆，一亿美元。这篇文章把这条链拆开，重点放在一件事：一个已经部署了 MFA 的大企业，为什么会被 help desk 放进去。 一、先把事实和推测分开MGM 事件的公开信息很多，但“结果”和“入口”的可信度不一样。先说能确认的部分。    时间 发生了什么    2023-09-10&#x2F;11 MGM 系统大面积故障：老虎机、房卡、预订、POS、ATM 受影响，公司主动关闭部分系统   2023-09-11 未授权第三方取得部分客户资料：姓名...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/226081822?v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Rec0</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">25</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>简介</span></div><div class="announcement_content">浅尝安全与社会工程<br>欢迎来信reco134510@gmail.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%92%93%E9%B1%BC%E7%9A%84%E2%80%9C%E4%BE%9B%E7%BB%99%E4%BE%A7%E6%94%B9%E9%9D%A9%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">一、钓鱼的“供给侧改革”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9B%BD%E5%86%85%E6%95%B0%E6%8D%AE%EF%BC%9A%E4%B8%80%E6%9D%A1%E7%9C%8B%E4%B8%8D%E8%A7%81%E7%9A%84%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="toc-number">2.</span> <span class="toc-text">二、国内数据：一条看不见的流水线</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E4%B8%89%E8%B5%B7%E6%A1%88%E5%AD%90%EF%BC%8C%E4%B8%89%E4%B8%AA%E7%AB%AF%E5%8F%A3"><span class="toc-number">3.</span> <span class="toc-text">三、三起案子，三个端口</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%90%88%E8%82%A5-21-%E4%BA%BA%E8%A1%A5%E8%B4%B4%E9%82%AE%E4%BB%B6%EF%BC%9A%E5%85%A5%E5%8F%A3%E6%98%AF%E9%82%AE%E7%AE%B1"><span class="toc-number">3.1.</span> <span class="toc-text">1. 合肥 21 人补贴邮件：入口是邮箱</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8F%B0%E5%B7%9E-1000-%E4%B8%87%E5%86%92%E5%85%85%E8%80%81%E6%9D%BF%EF%BC%9A%E5%85%A5%E5%8F%A3%E6%98%AF%E2%80%9C%E8%80%81%E6%9D%BF%E2%80%9D"><span class="toc-number">3.2.</span> <span class="toc-text">2. 台州 1000 万冒充老板：入口是“老板”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%85%AC%E5%AE%89%E9%83%A8-5-%E8%B5%B7%E2%80%9C%E7%B2%BE%E5%87%86%E6%8A%95%E6%AF%92%E2%80%9D%EF%BC%9A%E5%85%A5%E5%8F%A3%E6%98%AF%E6%9C%A8%E9%A9%AC"><span class="toc-number">3.3.</span> <span class="toc-text">3. 公安部 5 起“精准投毒”：入口是木马</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%BB%91%E4%BA%A7%E6%B5%81%E7%A8%8B%EF%BC%9A%E4%BB%8E%E8%B4%A6%E5%8F%B7%E5%88%B0%E6%B4%97%E9%92%B1"><span class="toc-number">4.</span> <span class="toc-text">四、黑产流程：从账号到洗钱</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%9D%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E9%9A%BE%E6%89%93"><span class="toc-number">5.</span> <span class="toc-text">五、为什么这条流水线难打</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%98%B2%E5%AE%88%EF%BC%9A%E6%96%AD%E9%93%BE%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E5%8F%AA%E6%95%99%E4%BA%BA%E5%88%AB%E7%82%B9"><span class="toc-number">6.</span> <span class="toc-text">六、防守：断链，而不是只教人别点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%AA%E4%BA%BA"><span class="toc-number">6.1.</span> <span class="toc-text">个人</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%81%E4%B8%9A"><span class="toc-number">6.2.</span> <span class="toc-text">企业</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B9%B3%E5%8F%B0%E4%B8%8E%E6%89%A7%E6%B3%95"><span class="toc-number">6.3.</span> <span class="toc-text">平台与执法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E9%99%84%EF%BC%9A%E9%92%93%E9%B1%BC%E8%80%85%E7%94%A8%E8%BF%87%E7%9A%84%E6%8A%80%E5%B7%A7%E6%B8%85%E5%8D%95"><span class="toc-number">7.</span> <span class="toc-text">七、附：钓鱼者用过的技巧清单</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E7%BB%93%E8%AF%AD"><span class="toc-number">8.</span> <span class="toc-text">八、结语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%84%E6%96%99%E4%B8%8E%E5%8F%A3%E5%BE%84"><span class="toc-number">9.</span> <span class="toc-text">资料与口径</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By Rec0</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.7.0</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.7.0"></script><script src="/js/main.js?v=5.7.0"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'Rec0o/Rec0o.github.io',
+      'data-repo-id': 'R_kgDOVVA7_g',
+      'data-category-id': 'DIC_kwDOVVA7_s4DJfEZ',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script src="/js/guestbook.js?v=20261102a"></script><script src="/js/right-nav.js?v=20261102a"></script><script src="/js/gallery.js?v=20261102a"></script><script src="/js/loader.js?v=20261102a"></script><script src="/vendor/APlayer.min.js?v=20261102a"></script><script src="/js/player.js?v=20261102a"></script><script id="canvas_nest" defer="defer" color="88,166,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="/vendor/canvas-nest.min.js"></script><script src="/vendor/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"]):not([data-fancybox])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      if (!item.parentNode) return
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || ''
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    const responseURL = e.request && e.request.responseURL
+    if (e.request && e.request.status === 404) {
+      true
+        ? pjax.loadUrl('/404.html')
+        : responseURL && (window.location.href = responseURL)
+    } else if (responseURL) {
+      window.location.href = responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
