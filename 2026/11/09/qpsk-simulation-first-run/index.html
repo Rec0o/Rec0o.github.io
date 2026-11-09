@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>记第一次跑 QPSK 仿真 | Rec0 Space</title><meta name="author" content="Rec0"><meta name="copyright" content="Rec0"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d1117"><meta name="description" content="本文记录一次 QPSK 链路仿真的过程，范围限定在该仿真本身及其所需的基础概念，包括模型、参数、实现、调试与结果。正文在关键概念和调试转折处补充解释，并在每个阶段末尾回顾该阶段的工作、原因与用途。 一、前置概念仿真：用数学模型在计算机中复现通信系统，重复运行大量样本，统计接收端的错误比例。可以把它理解成在电脑里搭一套模拟的通信系统：规则写对、样本足够多，结果才有参考价值；规则写错，图再好看也没有意">
+<meta property="og:type" content="article">
+<meta property="og:title" content="记第一次跑 QPSK 仿真">
+<meta property="og:url" content="https://rec0o.github.io/2026/11/09/qpsk-simulation-first-run/index.html">
+<meta property="og:site_name" content="Rec0 Space">
+<meta property="og:description" content="本文记录一次 QPSK 链路仿真的过程，范围限定在该仿真本身及其所需的基础概念，包括模型、参数、实现、调试与结果。正文在关键概念和调试转折处补充解释，并在每个阶段末尾回顾该阶段的工作、原因与用途。 一、前置概念仿真：用数学模型在计算机中复现通信系统，重复运行大量样本，统计接收端的错误比例。可以把它理解成在电脑里搭一套模拟的通信系统：规则写对、样本足够多，结果才有参考价值；规则写错，图再好看也没有意">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picsum.photos/seed/rec0-qpsk/1200/800">
+<meta property="article:published_time" content="2026-11-09T15:20:00.000Z">
+<meta property="article:modified_time" content="2026-11-09T15:52:02.484Z">
+<meta property="article:author" content="Rec0">
+<meta property="article:tag" content="QPSK">
+<meta property="article:tag" content="技术实践">
+<meta property="article:tag" content="通信仿真">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picsum.photos/seed/rec0-qpsk/1200/800"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "记第一次跑 QPSK 仿真",
+  "url": "https://rec0o.github.io/2026/11/09/qpsk-simulation-first-run/",
+  "image": "https://picsum.photos/seed/rec0-qpsk/1200/800",
+  "datePublished": "2026-11-09T15:20:00.000Z",
+  "dateModified": "2026-11-09T15:52:02.484Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "Rec0",
+      "url": "https://rec0o.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://avatars.githubusercontent.com/u/226081822?v=4"><link rel="canonical" href="https://rec0o.github.io/2026/11/09/qpsk-simulation-first-run/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.7.0"><link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        const data = { value }
+
+        if (ttl != null) {
+          data.expiry = Date.now() + ttl * 86400000
+        }
+
+        localStorage.setItem(key, JSON.stringify(data))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return
+
+        try {
+          const data = JSON.parse(itemStr)
+
+          if (data.expiry && Date.now() > data.expiry) {
+            localStorage.removeItem(key)
+            return
+          }
+
+          return data.value
+        } catch {
+          localStorage.removeItem(key)
+        }
+      }
+    }
+
+    const scriptCache = new Map()
+    const cssCache = new Map()
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => {
+        if (scriptCache.has(url)) {
+          return scriptCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+
+          script.src = url
+          script.async = true
+
+          for (const key in attr) {
+            script.setAttribute(key, attr[key])
+          }
+
+          script.onload = resolve
+          script.onerror = reject
+
+          document.head.appendChild(script)
+        })
+
+        scriptCache.set(url, promise)
+
+        return promise
+      },
+      getCSS: (url, id) => {
+        if (cssCache.has(url)) {
+          return cssCache.get(url)
+        }
+
+        const promise = new Promise((resolve, reject) => {
+          const link = document.createElement('link')
+
+          link.rel = 'stylesheet'
+          link.href = url
+
+          if (id) {
+            link.id = id
+          }
+
+          link.onload = resolve
+          link.onerror = reject
+
+          document.head.appendChild(link)
+        })
+
+        cssCache.set(url, promise)
+
+        return promise
+      },
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+      const activateDarkMode = () => {
+        document.documentElement.dataset.theme = 'dark'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#0d1117')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.dataset.theme = 'light'
+        if (metaThemeColor !== null) {
+          metaThemeColor.setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '记第一次跑 QPSK 仿真',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css?v=20261102a"><link rel="stylesheet" href="/css/loader.css?v=20261102a"><link rel="stylesheet" href="/vendor/APlayer.min.css?v=20261102a"><link rel="stylesheet" href="/css/player.css?v=20261102a"><link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin><script>(function(){try{if(localStorage.getItem('rec0_loader_seen'))return;}catch(e){}document.documentElement.classList.add('rec0-loading');})();</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://picsum.photos/seed/rec0-qpsk/1200/800);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Rec0 Space</span></a><a class="nav-page-title" href="/"><span class="site-name">记第一次跑 QPSK 仿真</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">记第一次跑 QPSK 仿真</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-11-09T15:20:00.000Z" title="发表于 2026-11-09 23:20:00">2026-11-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-11-09T15:52:02.484Z" title="更新于 2026-11-09 23:52:02">2026-11-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF%E5%8D%9A%E5%AE%A2/">技术博客</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>本文记录一次 QPSK 链路仿真的过程，范围限定在该仿真本身及其所需的基础概念，包括模型、参数、实现、调试与结果。正文在关键概念和调试转折处补充解释，并在每个阶段末尾回顾该阶段的工作、原因与用途。</p>
+<h2 id="一、前置概念"><a href="#一、前置概念" class="headerlink" title="一、前置概念"></a>一、前置概念</h2><p>仿真：用数学模型在计算机中复现通信系统，重复运行大量样本，统计接收端的错误比例。可以把它理解成在电脑里搭一套模拟的通信系统：规则写对、样本足够多，结果才有参考价值；规则写错，图再好看也没有意义。仿真不替代实物测试，只反映模型包含的因素。</p>
+<p>链路：从发送端到接收端的信号通路。发送端把比特变成符号，信道给符号加噪声，接收端根据接收到的符号判回比特。整条链路可以看作一条流水线，每一段都可能使 0 或 1 出错；仿真的任务就是把每一段写清楚，再看最后错多少。</p>
+<p>比特与符号：比特是 0 或 1；符号是调制器一次输出的信号单元。QPSK 一个符号携带 2 比特。</p>
+<p>QPSK：正交相移键控。用 I（同相）、Q（正交）两路分量组成平面上的四个点，每个点对应两位比特。对应关系为 00→(-1,-1)，01→(-1,+1)，10→(+1,-1)，11→(+1,+1)。QPSK 每次发送两位比特，四种组合对应四个位置；接收端根据信号落点与四个位置的距离，判定对应的两位比特。</p>
+<p>Gray 映射：让相邻点只差一位比特。噪声把点推到相邻位置时，通常只错一位。四个点按“相邻只差一位”的方式排布，目的就是让一次误判尽量只影响一位。</p>
+<p>误码率（BER）：错误比特数除以总比特数。例如 0.01 表示平均每 100 比特错 1 位。</p>
+<p>Eb&#x2F;N0：每比特能量与噪声功率谱密度（单位带宽内的噪声功率）之比。它去掉了带宽和调制方式的影响，便于不同系统比较。dB 是对数单位，3 dB 约等于功率翻倍，10 dB 等于 10 倍。这个量衡量的是每个比特分到多少能量、相对于噪声有多强；使用 dB 是因为数值跨度大，取对数后更容易画图和比较。</p>
+<p>噪声：本仿真采用加性高斯白噪声（AWGN），在 I、Q 两个方向分别加入独立随机噪声。设 γ 为 Eb&#x2F;N0 的线性值（由 dB 换算得到的普通比值），符号能量设为 1，每个符号携带 2 比特，因此每比特能量为 1&#x2F;2；噪声功率谱密度为 1&#x2F;(2γ)；每个方向的噪声标准差为 σ &#x3D; 1&#x2F;(2√γ)。这串换算看似较繁，实际只完成一件事：把横轴上的 Eb&#x2F;N0 换算成代码中需要加入的噪声大小。噪声加得越大，点越分散，误码越多。</p>
+<p>蒙特卡洛：通过大量随机样本估计误码率。固定随机种子（伪随机数生成器的初始状态），可保证重复运行得到同一结果。它不先推导公式，而是让计算机大量重复“发—加噪—判”，用实际出错的频率逼近误码率；固定种子则是为了让每次重跑得到同一组数。</p>
+<p>阶段回顾：这一阶段完成了概念界定，明确仿真、链路、比特与符号、QPSK、Gray 映射、误码率、Eb&#x2F;N0、噪声和蒙特卡洛的含义。先做这一步，是因为这些量会直接出现在参数、代码和结果里，不先定义，后面就分不清每个数字代表什么。它的用途是：看到 0–10 dB、5×10⁷ 比特、0.197 dB 这些数时，知道它们在链路中的位置，而不是只记结论。</p>
+<h2 id="二、模型与参数"><a href="#二、模型与参数" class="headerlink" title="二、模型与参数"></a>二、模型与参数</h2><p>仿真链路分为六步：</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>做什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>生成比特</td>
+<td>产生随机 0&#x2F;1</td>
+</tr>
+<tr>
+<td>映射</td>
+<td>每两位比特对应一个点</td>
+</tr>
+<tr>
+<td>调制</td>
+<td>把点写成复数符号（实部为 I，虚部为 Q），除以 √2</td>
+</tr>
+<tr>
+<td>加噪</td>
+<td>每个方向加入独立高斯噪声</td>
+</tr>
+<tr>
+<td>判决</td>
+<td>I、Q 分别按正负判回 0&#x2F;1</td>
+</tr>
+<tr>
+<td>统计</td>
+<td>与原始比特逐位比较，累计错误</td>
+</tr>
+</tbody></table>
+<p>六步对应六道工序。代码按这六段组织，哪一段出现问题，就回到哪一段检查，不需要对整条链路同时排查。</p>
+<p>调制时对符号除以 √2，使每个点到原点的距离为 1，即符号能量为 1。这样做的目的是为后续噪声计算提供一个统一的能量基准。实现时，每一步对应一段代码：生成比特、按映射表得到 I&#x2F;Q、除以 √2、按 σ 加入两个独立噪声、分别判断 I&#x2F;Q 正负、累计错误数。各段相互独立，便于检查中间结果。</p>
+<p>仿真参数如下：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>取值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>信噪比范围</td>
+<td>Eb&#x2F;N0 &#x3D; 0–10 dB，步长 1 dB，共 11 点</td>
+</tr>
+<tr>
+<td>每点比特数</td>
+<td>5×10⁷</td>
+</tr>
+<tr>
+<td>随机种子</td>
+<td>20261108</td>
+</tr>
+<tr>
+<td>分段大小</td>
+<td>每段 2×10⁶ 符号</td>
+</tr>
+<tr>
+<td>信道</td>
+<td>加性高斯白噪声</td>
+</tr>
+</tbody></table>
+<p>固定随机种子用于复现；每段 2×10⁶ 符号用于控制内存。先用 10⁵ 比特试运行，确认程序可正常运行、结果量级合理，再提高到最终比特数。先使用小样本，是因为程序可运行和数量级正确比最终精度更容易先确认；若直接使用五千万比特，出现错误时需要较长时间才能发现。固定种子保证同样的输入得到同样的输出；分段运行则是为了避免内存一次性装下所有符号。</p>
+<p>阶段回顾：这一阶段把链路拆成六步，并确定信噪比范围、每点比特数、随机种子和分段大小。这样做的原因，是让代码结构与数学模型一一对应，同时保证结果可复现、内存可控。它的用途是：出现偏差时能够定位到具体步骤；换参数或换模型时，可以在同一套框架上重跑。</p>
+<h2 id="三、过程与调试"><a href="#三、过程与调试" class="headerlink" title="三、过程与调试"></a>三、过程与调试</h2><p>初始版本每个信噪比点使用 2×10⁷ 比特。0–8 dB 范围内，仿真值与理论值基本重合；10 dB 点出现 1.07 dB 偏差：理论 BER 为 3.87×10⁻⁶，仿真 BER 为 4.95×10⁻⁶。0–8 dB 与理论值吻合，说明链路主体没有搭错；10 dB 点出现偏差时，先检查该点统计了多少错误，再判断模型是否有问题。</p>
+<p>检查噪声标准差、Gray 映射与判决逻辑，未发现模型错误。进一步统计发现，该点只有 99 个错误。99 个错误数量偏少；错误数本身存在随机波动，样本较少时出现偏差属于正常现象。</p>
+<p>误码率由错误数估计，相对波动约为 1&#x2F;√N。99 个错误对应约 10% 的相对误差，出现 20%–30% 的波动属于正常范围。BER 相对偏差为 28%，换算为 dB 即 1.07 dB。因此该偏差来自样本量不足，而非模型错误。这里的关键不是总共发送了多少比特，而是错了多少个；相对波动按 1&#x2F;√N 估算，错误数越少，结果波动越大。</p>
+<p>将每点提高到 5×10⁷ 比特后，10 dB 点的错误数变为 185，偏差降至 0.197 dB。提高比特数后，错误数从 99 增加到 185，统计更稳定，偏差随之下降；这一步验证的是样本量，不是模型。</p>
+<p>由此得到的结论是：仿真精度主要由错误数决定，不由总比特数决定。每个信噪比点宜至少统计约 100 个错误；高信噪比点需要更多比特。</p>
+<p>阶段回顾：这一阶段先运行 2×10⁷ 比特，发现 10 dB 点偏 1.07 dB；查到只有 99 个错误；把每点提高到 5×10⁷ 比特，错误数变为 185，偏差降到 0.197 dB。这样做的原因，是先判断偏差来自模型还是样本量，再决定改代码还是增加比特。它的用途是得到一条可复用的经验：仿真精度由错误数决定；也为后续仿真定下“每点至少约 100 个错误”的下限。</p>
+<h2 id="四、结果"><a href="#四、结果" class="headerlink" title="四、结果"></a>四、结果</h2><p>最终 11 个点的结果如下：</p>
+<table>
+<thead>
+<tr>
+<th>Eb&#x2F;N0 (dB)</th>
+<th>理论 BER</th>
+<th>仿真 BER</th>
+<th>错误数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>7.8650e-02</td>
+<td>7.8646e-02</td>
+<td>3,932,281</td>
+</tr>
+<tr>
+<td>1</td>
+<td>5.6282e-02</td>
+<td>5.6310e-02</td>
+<td>2,815,525</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3.7506e-02</td>
+<td>3.7527e-02</td>
+<td>1,876,359</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2.2878e-02</td>
+<td>2.2871e-02</td>
+<td>1,143,569</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1.2501e-02</td>
+<td>1.2510e-02</td>
+<td>625,496</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5.9539e-03</td>
+<td>5.9636e-03</td>
+<td>298,180</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2.3883e-03</td>
+<td>2.3930e-03</td>
+<td>119,649</td>
+</tr>
+<tr>
+<td>7</td>
+<td>7.7267e-04</td>
+<td>7.7026e-04</td>
+<td>38,513</td>
+</tr>
+<tr>
+<td>8</td>
+<td>1.9091e-04</td>
+<td>1.8832e-04</td>
+<td>9,416</td>
+</tr>
+<tr>
+<td>9</td>
+<td>3.3627e-05</td>
+<td>3.5000e-05</td>
+<td>1,750</td>
+</tr>
+<tr>
+<td>10</td>
+<td>3.8721e-06</td>
+<td>3.7000e-06</td>
+<td>185</td>
+</tr>
+</tbody></table>
+<p>最大偏差为 0.197 dB，平均偏差为 0.043 dB。0–8 dB 范围内基本重合；9–10 dB 范围内有轻微波动，原因仍是错误数较少。</p>
+<p>理论误码率按 QPSK 在 AWGN 下的公式计算：</p>
+<p>Pb &#x3D; 0.5 · erfc(√(Eb&#x2F;N0))</p>
+<p>其中 erfc 为互补误差函数，即 1 减去误差函数。仿真走随机抽样，理论走公式，两条独立路径互相验证。理论公式提供一条标准线，蒙特卡洛提供一条实测线；两条路径独立计算，结果一致，才能说明仿真结果不是在同一套假设下自我重复。</p>
+<p>星座图（接收符号在平面上的分布）取 0、5、10 dB 三档，每档 3000 个接收符号。0 dB 时四组点相互重叠，难以区分；5 dB 时四组开始分离，边缘仍有扩散；10 dB 时四组较为集中。曲线反映统计结果，星座图反映瞬时分布。表格、曲线、星座图表达的是同一批数据的不同侧面：表格给出数值，曲线显示趋势，星座图显示接收点的分散程度。</p>
+<p>阶段回顾：这一阶段整理 11 个点的理论值、仿真值和错误数，计算最大&#x2F;平均偏差，并画出 0&#x2F;5&#x2F;10 dB 星座图。这样做的原因，是用理论公式和蒙特卡洛两条独立路径互验，避免只看一条曲线。它的用途是形成一条可复现的基准曲线，后续增加其他环节时，可以相对这条线比较增益或损失。</p>
+<h2 id="五、结论与范围"><a href="#五、结论与范围" class="headerlink" title="五、结论与范围"></a>五、结论与范围</h2><p>本仿真能够支持以下结论：六步模型与理论公式一致；Gray 映射与理论误码率一致；固定种子下结果可复现。</p>
+<p>本仿真只适用于本模型：信道仅为加性高斯白噪声，接收端假设与发送端同步，且只包含上述六步。它不能代表真实信道或硬件实现后的性能。换言之，该结果只说明在本模型内链路搭建正确，不说明真实设备的性能；真实信道、同步误差和硬件损伤都不在这个模型里。</p>
+<p>本次仿真共 11 个信噪比点，每点 5×10⁷ 比特，合计 5.5 亿比特。过程顺序为：概念 → 模型 → 参数 → 运行 → 调试 → 结果。</p>
+<p>整体回顾：这次完成了一次理想 AWGN 条件下的 QPSK 链路仿真，目的是用最简单的模型确认链路、映射、噪声换算和统计方法是否正确。它的用途是作为后续更复杂模型的基准，同时明确它不能代表真实信道或硬件性能。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://rec0o.github.io">Rec0</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://rec0o.github.io/2026/11/09/qpsk-simulation-first-run/">https://rec0o.github.io/2026/11/09/qpsk-simulation-first-run/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://rec0o.github.io" target="_blank">Rec0 Space</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%8A%80%E6%9C%AF%E5%AE%9E%E8%B7%B5/">技术实践</a><a class="post-meta__tags" href="/tags/%E9%80%9A%E4%BF%A1%E4%BB%BF%E7%9C%9F/">通信仿真</a><a class="post-meta__tags" href="/tags/QPSK/">QPSK</a></div><div class="post-share"><div class="social-share" data-image="https://picsum.photos/seed/rec0-qpsk/1200/800" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/11/05/phishing-industrialization-black-market-workflow/" title="钓鱼产业化：黑产流程解析"><img class="cover" src="https://picsum.photos/seed/rec0-phishing-chain/1200/800" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">钓鱼产业化：黑产流程解析</div></div><div class="info-2"><div class="info-item-1">2024 年，合肥某公司。21 名员工在同一天收到公司邮箱发来的邮件：薪资、津贴有变动，扫码申领。 王女士填完银行卡、身份证号、手机号、卡内余额，最后输入验证码。4 万多元没了。公司 21 人合计被骗 22 万余元。 警方抓了 6 个人，打掉两个团伙：一个破解邮箱，一个洗钱。 一封邮件骗 21 个人，靠的不是文笔，是分工。 这就是“钓鱼产业化”的意思：你看到的是一封邮件，黑产看到的是一条可复用的生产线。有人负责搞账号，有人负责做页面，有人负责投放，有人负责收验证码，最后有人负责把钱洗白。每个环节都有人报价，每个环节都可以外包。 一、钓鱼的“供给侧改革”过去钓鱼靠手艺：会写邮件、会做假页面、会挑目标、会躲检测。现在钓鱼靠采购。 2026 年 10 月，Microsoft 联合执法机构端掉了一套中文钓鱼生态：CoGUI、Haozi、Iron Man System 三套钓鱼套件，以及配套的 YAM Store。YAM Store 卖的是被入侵或伪造的云环境与凭据；Iron Man System 提供 2300 多个预制诱饵页面，冒充邮政、交通罚单、税务、银行、电信等品牌，按订阅收费。 ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/11/02/browser-fingerprint-selfcheck/" title="当你在登录网站时，网站也在登录你——网络指纹自查"><img class="cover" src="https://picsum.photos/seed/rec0-fingerprint/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-11-02</div><div class="info-item-2">当你在登录网站时，网站也在登录你——网络指纹自查</div></div><div class="info-2"><div class="info-item-1">你打开一个登录页，还没输入账号，网站已经读完了一轮信息： 你在哪个城市、用哪家运营商、走没走代理；你的系统、浏览器版本、屏幕分辨率、时区、语言；你的显卡、字体、Canvas 渲染结果、音频特征；甚至你的电池状态和 CPU 线程数。 这些信息不需要你点“同意”，也不会弹授权框。它们在你打开页面的那一刻就发生了。 这篇讲五件事：网站到底能看到什么、怎么用现成工具自查、攻击者会怎么把这些数据拼成话术、一次可复刻的授权演练，以及哪些“隐身”其实是错觉。 一、你登录之前，网站已经读完了你一个典型的中文自检站（who.1ms.dog）会在一次访问里读取 80 多项信息，大致分五层：    层级 网站能读到什么    服务器侧 IP、IPv6、ASN&#x2F;运营商、DNS 服务器、反向解析、TLS 版本与加密套件、TLS 指纹、数据中心与延迟   请求头 User-Agent、Accept-Language、Client Hints、压缩方式、DNT、Referer   语言与地区 浏览器语言、区域设置、系统时区、时钟格式、一周起始日、键盘布局   指纹 Canvas、WebGL、音频、数...</div></div></div></a><a class="pagination-related" href="/2026/10/31/cyber-friendship-guide/" title="赛博交友指南——提示词编写的部分见解"><img class="cover" src="https://picsum.photos/seed/rec0-prompt/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-31</div><div class="info-item-2">赛博交友指南——提示词编写的部分见解</div></div><div class="info-2"><div class="info-item-1">第一次用 AI 的深夜，我对着输入框删了又改。写少了怕它猜错，写多了又像在给下属写需求文档。 后来发现，问题不在字多字少，在我把对话当成了搜索。搜索引擎不知道你是谁，也不需要知道；但 AI 给的是回应，而回应这件事天然要求一段关系。 这篇不提供模板。它只是我自己的写法，和那些流行框架对照之后的一点看法。 一、先想清楚你在跟谁说话大多数人第一次用 AI 时，把它当搜索引擎：敲几个关键词，等答案。 这个隐喻一开始就错了。你要的不是网页，是回应。而回应，要求对方先知道你处在什么局面里。 我更愿意把 AI 当成一个刚入职的同事：  他能力很强，几乎所有领域都懂一点； 他记性很好，但只记得你告诉过他的； 他不会主动问你「这个项目之前是怎么做的」，除非你让他问； 他非常怕做错，所以你不说清楚，他要么过度谨慎，要么大胆猜错。  按这个隐喻，提示词问题就变得具体了：你不是在「输入指令」，你是在交接工作。交接得好不好，取决于三件事——他知道多少背景、他知道边界在哪、他知道怎么算做完。  把 AI 当人，不是因为它有人格，而是因为只有「人」才需要被交代背景、被划出边界、被承认会犯错。  反过来，你不...</div></div></div></a><a class="pagination-related" href="/2026/10/25/build-log/" title="从零搭建 Rec0 Space：完整建站记录"><img class="cover" src="https://picsum.photos/seed/rec0-build/1200/800" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-10-25</div><div class="info-item-2">从零搭建 Rec0 Space：完整建站记录</div></div><div class="info-2"><div class="info-item-1">这篇文章记录本站从零到上线的完整过程：技术选型、环境搭建、视觉改造、组件接入，以及踩过的坑。既是归档，也给后来者一份可复用的清单。 一、技术选型个人博客常见的三条路：    方案 优点 代价    Wix 等 SaaS 拖拽建站，零代码 去广告要付费；数据锁在平台   WordPress 生态庞大，插件齐全 需要服务器，要备案，维护成本高   静态博客（Hexo） 免费、极快、数据自持 需要命令行基础   最终选择 Hexo + Butterfly 主题 + GitHub Pages：零成本、纯静态、内容完全掌握在自己手里。 二、环境与首次上线先从 Node.js 装起（Hexo 的运行环境）： 1winget install OpenJS.NodeJS.LTS  初始化项目并安装 Butterfly 主题： 12345cd F:\zzzzz\blognpm install -g hexo-clihexo init .git clone -b master https://github.com/jerryc127/hexo-theme-butterfly.git themes/b...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="giscus-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/226081822?v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Rec0</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>简介</span></div><div class="announcement_content">浅尝安全与社会工程<br>欢迎来信reco134510@gmail.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E7%BD%AE%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">一、前置概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8F%82%E6%95%B0"><span class="toc-number">2.</span> <span class="toc-text">二、模型与参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E8%BF%87%E7%A8%8B%E4%B8%8E%E8%B0%83%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">三、过程与调试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%BB%93%E6%9E%9C"><span class="toc-number">4.</span> <span class="toc-text">四、结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E7%BB%93%E8%AE%BA%E4%B8%8E%E8%8C%83%E5%9B%B4"><span class="toc-number">5.</span> <span class="toc-text">五、结论与范围</span></a></li></ol></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By Rec0</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.7.0</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.7.0"></script><script src="/js/main.js?v=5.7.0"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+  const option = {"data-lang":"zh-CN","data-input-position":"bottom"}
+
+  const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
+
+  const createScriptElement = config => {
+    const ele = document.createElement('script')
+    Object.entries(config).forEach(([key, value]) => {
+      ele.setAttribute(key, value)
+    })
+    return ele
+  }
+
+  const loadGiscus = (el = document, key) => {
+    const mappingConfig = isShuoshuo
+      ? { 'data-mapping': 'specific', 'data-term': key }
+      : { 'data-mapping': (option && option['data-mapping']) || 'pathname' }
+
+    const giscusConfig = {
+      src: 'https://giscus.app/client.js',
+      'data-repo': 'Rec0o/Rec0o.github.io',
+      'data-repo-id': 'R_kgDOVVA7_g',
+      'data-category-id': 'DIC_kwDOVVA7_s4DJfEZ',
+      'data-theme': getGiscusTheme(document.documentElement.getAttribute('data-theme')),
+      'data-reactions-enabled': '1',
+      crossorigin: 'anonymous',
+      async: true,
+      ...option,
+      ...mappingConfig
+    }
+
+    const scriptElement = createScriptElement(giscusConfig)
+
+    el.querySelector('#giscus-wrap').appendChild(scriptElement)
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyGiscus = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+  }
+
+  const changeGiscusTheme = theme => {
+    const iframe = document.querySelector('#giscus-wrap iframe')
+    if (iframe) {
+      const message = {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(theme)
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(message, 'https://giscus.app')
+    }
+  }
+
+  btf.addGlobalFn('themeChange', changeGiscusTheme, 'giscus')
+
+  if (isShuoshuo) {
+    'Giscus' === 'Giscus'
+      ? window.shuoshuoComment = { loadComment: loadGiscus }
+      : window.loadOtherComment = loadGiscus
+    return
+  }
+
+  if ('Giscus' === 'Giscus' || !false) {
+    if (false) btf.loadComment(document.getElementById('giscus-wrap'), loadGiscus)
+    else loadGiscus()
+  } else {
+    window.loadOtherComment = loadGiscus
+  }
+})()</script></div><script src="/js/guestbook.js?v=20261102a"></script><script src="/js/right-nav.js?v=20261102a"></script><script src="/js/gallery.js?v=20261102a"></script><script src="/js/loader.js?v=20261102a"></script><script src="/vendor/APlayer.min.js?v=20261102a"></script><script src="/js/player.js?v=20261102a"></script><script id="canvas_nest" defer="defer" color="88,166,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="/vendor/canvas-nest.min.js"></script><script src="/vendor/pjax.min.js" defer="defer"></script><script>document.addEventListener('DOMContentLoaded', () => {
+  const pjaxSelectors = ["meta[property=\"og:image\"]","meta[property=\"og:title\"]","meta[property=\"og:url\"]","meta[property=\"og:description\"]","link[rel=\"canonical\"]","head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"]):not([data-fancybox])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      if (!item.parentNode) return
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || ''
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    const responseURL = e.request && e.request.responseURL
+    if (e.request && e.request.status === 404) {
+      true
+        ? pjax.loadUrl('/404.html')
+        : responseURL && (window.location.href = responseURL)
+    } else if (responseURL) {
+      window.location.href = responseURL
+    }
+  })
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
